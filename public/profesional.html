@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Profesional - Estética Zen</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { 
+            --rosa-p: #fce4ec; 
+            --rosa-f: #f06292; 
+            --rosa-h: #f8bbd0; 
+            --texto-oscuro: #4f4f4f;
+        }
+        body { 
+            background-color: #fff9fb; 
+            color: var(--texto-oscuro); 
+            font-family: 'Segoe UI', sans-serif; 
+        }
+        .navbar { 
+            background-color: white; 
+            border-bottom: 2px solid var(--rosa-p); 
+        }
+        .card-turno { 
+            border-left: 6px solid var(--rosa-f); 
+            border-radius: 20px; 
+            transition: 0.3s; 
+        }
+        .btn-check-estado { 
+            border-radius: 20px; 
+            font-size: 0.8rem; 
+            font-weight: 600;
+        }
+        .badge-hora {
+            background-color: var(--rosa-p);
+            color: var(--rosa-f);
+            font-weight: bold;
+            border-radius: 10px;
+            padding: 6px 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-light px-4 py-3 shadow-sm mb-5">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <div>
+                <a href="index.html" class="text-decoration-none small me-3" style="color: var(--rosa-f)">← Volver al Inicio</a>
+                <span class="navbar-brand h1 mb-0" style="color: var(--rosa-f);">🌸 ESTÉTICA ZEN</span>
+            </div>
+            <div>
+                <span class="text-muted small me-3 fw-bold">👩‍⚕️ Dra. Ana Valenzuela (Cosmiatra)</span>
+                <a href="login.html" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Cerrar Sesión</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 800px;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold mb-1">Mis Citas de Hoy</h4>
+                <p class="text-muted small mb-0">Gestión y control de asistencia de pacientes (HU#5 - HU#8)</p>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm border-0 mb-3 card-turno" id="turno-1">
+            <div class="card-body d-flex justify-content-between align-items-center p-4">
+                <div>
+                    <span class="badge badge-hora mb-2 d-inline-block">09:00 AM</span>
+                    <h5 class="mb-1 fw-bold" style="color: #333;">María López</h5>
+                    <p class="text-muted small mb-2">✨ Limpieza Facial Profunda (60 min)</p>
+                    <span class="small fw-bold text-warning estado-texto">Estado: Pendiente</span>
+                </div>
+                <div class="d-flex gap-2 acciones-contenedor">
+                    <button class="btn btn-outline-success btn-check-estado px-3" onclick="cambiarEstadoTurno(1, 'Completado')">✓ Completado</button>
+                    <button class="btn btn-outline-danger btn-check-estado px-3" onclick="cambiarEstadoTurno(1, 'Ausente')">✗ Ausente</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 mb-3 card-turno" id="turno-2">
+            <div class="card-body d-flex justify-content-between align-items-center p-4">
+                <div>
+                    <span class="badge badge-hora mb-2 d-inline-block">11:30 AM</span>
+                    <h5 class="mb-1 fw-bold" style="color: #333;">Lucía Torres</h5>
+                    <p class="text-muted small mb-2">✨ Masaje Descontracturante de Piedras (50 min)</p>
+                    <span class="small fw-bold text-warning estado-texto">Estado: Pendiente</span>
+                </div>
+                <div class="d-flex gap-2 acciones-contenedor">
+                    <button class="btn btn-outline-success btn-check-estado px-3" onclick="cambiarEstadoTurno(2, 'Completado')">✓ Completado</button>
+                    <button class="btn btn-outline-danger btn-check-estado px-3" onclick="cambiarEstadoTurno(2, 'Ausente')">✗ Ausente</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 mb-3 card-turno" id="turno-3">
+            <div class="card-body d-flex justify-content-between align-items-center p-4">
+                <div>
+                    <span class="badge badge-hora mb-2 d-inline-block">15:00 PM</span>
+                    <h5 class="mb-1 fw-bold" style="color: #333;">Gabriela Benítez</h5>
+                    <p class="text-muted small mb-2">✨ Perfilado e Hidratación de Cejas (45 min)</p>
+                    <span class="small fw-bold text-warning estado-texto">Estado: Pendiente</span>
+                </div>
+                <div class="d-flex gap-2 acciones-contenedor">
+                    <button class="btn btn-outline-success btn-check-estado px-3" onclick="cambiarEstadoTurno(3, 'Completado')">✓ Completado</button>
+                    <button class="btn btn-outline-danger btn-check-estado px-3" onclick="cambiarEstadoTurno(3, 'Ausente')">✗ Ausente</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Lógica interactiva en pantalla para simular la HU#8 (Control de Asistencia)
+        function cambiarEstadoTurno(id, nuevoEstado) {
+            const tarjeta = document.getElementById(`turno-${id}`);
+            const textoEstado = tarjeta.querySelector('.estado-texto');
+            const contenedorAcciones = tarjeta.querySelector('.acciones-contenedor');
+
+            if (nuevoEstado === 'Completado') {
+                tarjeta.style.borderLeftColor = "#198754"; // Cambia la barra a Verde
+                tarjeta.style.backgroundColor = "#e8f5e9"; // Fondo verde claro
+                textoEstado.innerText = "Estado: ✓ Atendido con éxito";
+                textoEstado.className = "small fw-bold text-success";
+            } else {
+                tarjeta.style.borderLeftColor = "#dc3545"; // Cambia la barra a Rojo
+                tarjeta.style.backgroundColor = "#ffebee"; // Fondo rojo claro
+                textoEstado.innerText = "Estado: ✗ Paciente Ausente";
+                textoEstado.className = "small fw-bold text-danger";
+            }
+
+            // Ocultamos las acciones de los botones para consolidar el cambio de estado
+            contenedorAcciones.innerHTML = `<span class="badge bg-secondary rounded-pill px-3 py-2 small" style="font-size:0.75rem;">Asistencia Registrada</span>`;
+        }
+    </script>
+</body>
+</html>

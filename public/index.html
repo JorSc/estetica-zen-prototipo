@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estética Zen - Tu espacio de bienestar</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { 
+            --rosa-p: #fce4ec; 
+            --rosa-f: #f06292; 
+            --rosa-h: #f8bbd0; 
+            --texto: #4f4f4f;
+        }
+        body { 
+            background-color: #fff9fb; 
+            color: var(--texto);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        /* Navbar Estilizada */
+        .navbar {
+            background-color: white;
+            border-bottom: 1px solid var(--rosa-p);
+        }
+        .navbar-brand {
+            color: var(--rosa-f) !important;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .btn-ingresar {
+            border: 1px solid var(--rosa-f);
+            color: var(--rosa-f);
+            border-radius: 20px;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+        .btn-ingresar:hover {
+            background-color: var(--rosa-f);
+            color: white;
+        }
+
+        /* Sección Principal (Hero) */
+        .hero-section {
+            background: linear-gradient(135deg, #fce4ec 0%, #fff9fb 100%);
+            padding: 100px 0;
+            border-bottom-left-radius: 60px;
+            border-bottom-right-radius: 60px;
+        }
+        .btn-reservar {
+            background-color: var(--rosa-f);
+            color: white;
+            font-weight: 600;
+            padding: 12px 35px;
+            border-radius: 30px;
+            border: none;
+            box-shadow: 0 4px 15px rgba(240, 98, 146, 0.3);
+            transition: 0.3s;
+        }
+        .btn-reservar:hover {
+            background-color: #ec407a;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Sección de Características */
+        .feature-card {
+            background: white;
+            border: none;
+            border-radius: 25px;
+            padding: 30px;
+            transition: 0.3s;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(240, 98, 146, 0.1) !important;
+        }
+        .icon-box {
+            background-color: var(--rosa-p);
+            color: var(--rosa-f);
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg px-4 py-3 sticky-top shadow-sm">
+        <div class="container-fluid">
+            <span class="navbar-brand h1 mb-0">🌸 ESTÉTICA ZEN</span>
+            <div class="ms-auto d-flex align-items-center gap-2">
+                <a href="login.html" class="btn btn-ingresar px-4 btn-sm">Portal de Acceso</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero-section text-center">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <span class="badge bg-white text-dark shadow-sm px-3 py-2 rounded-pill mb-3" style="color: var(--rosa-f) !important;">✨ Equilibrio, Cuerpo y Mente</span>
+                    <h1 class="display-4 fw-bold mb-3" style="color: #4a4a4a;">Tu momento de desconexión y bienestar</h1>
+                    <p class="lead text-muted mb-5">Descubre nuestros tratamientos premium diseñados exclusivamente para resaltar tu belleza natural y renovar tu energía vital.</p>
+                    
+                    <a href="login.html" class="btn btn-reservar text-decoration-none shadow">AGENDAR TURNO AHORA</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="container my-5 py-4">
+        <div class="text-center mb-5">
+            <h3 class="fw-bold" style="color: var(--texto)">¿Por qué elegirnos?</h3>
+            <p class="text-muted small">Cuidamos cada detalle para ofrecerte una experiencia única</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card feature-card shadow-sm text-center align-items-center">
+                    <div class="icon-box">✨</div>
+                    <h5 class="fw-bold">Tratamientos Premium</h5>
+                    <p class="text-muted small mb-0">Limpiezas faciales profundas, masajes relajantes y técnicas de vanguardia adaptadas a tus necesidades.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card feature-card shadow-sm text-center align-items-center">
+                    <div class="icon-box">👩‍⚕️</div>
+                    <h5 class="fw-bold">Profesionales Expertos</h5>
+                    <p class="text-muted small mb-0">Nuestro equipo de cosmiatras y terapeutas certificadas te brindarán una atención cálida y personalizada.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card feature-card shadow-sm text-center align-items-center">
+                    <div class="icon-box">🕒</div>
+                    <h5 class="fw-bold">Reserva Online 24/7</h5>
+                    <p class="text-muted small mb-0">Olvídate de las llamadas. Elige tu servicio, tu profesional favorito y congela tu turno al instante desde la web.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-white text-center py-4 border-top mt-5">
+        <p class="text-muted small mb-0">© 2026 Estética Zen. Todos los derechos reservados.</p>
+        <p class="text-muted" style="font-size: 0.75rem;">Prototipo académico para la validación de Historias de Usuario.</p>
+    </footer>
+
+</body>
+</html>

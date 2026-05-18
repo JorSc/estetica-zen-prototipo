@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Estética Zen</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { 
+            --rosa-f: #f06292; 
+            --rosa-p: #fce4ec; 
+            --rosa-h: #f8bbd0; 
+            --texto-oscuro: #4f4f4f;
+        }
+        body { background-color: #fff9fb; font-family: 'Segoe UI', sans-serif; color: var(--texto-oscuro); }
+        .btn-nuevo { background-color: var(--rosa-f); color: white; border-radius: 25px; border: none; padding: 10px 25px; font-weight: 600; transition: 0.3s; }
+        .btn-nuevo:hover { background-color: #ec407a; color: white; transform: scale(1.02); }
+        .card-custom { border-radius: 20px; border: none; background: white; }
+        .modal-content { border-radius: 25px; border: none; }
+        .modal-header { background-color: var(--rosa-p); border-bottom: 2px solid var(--rosa-h); border-top-left-radius: 25px; border-top-right-radius: 25px; }
+        .btn-rosa { background-color: var(--rosa-f); color: white; border-radius: 20px; font-weight: 600; }
+        .btn-rosa:hover { background-color: #ec407a; color: white; }
+        .form-control, .form-select { border-color: var(--rosa-h); }
+        .form-control:focus, .form-select:focus { border-color: var(--rosa-f); box-shadow: 0 0 0 0.25rem rgba(240, 98, 146, 0.25); }
+        
+        /* Pestañas (Tabs) */
+        .nav-tabs { border-bottom: 2px solid var(--rosa-p); }
+        .nav-link { color: #888; font-weight: 600; border: none !important; margin-right: 10px; border-radius: 15px 15px 0 0 !important; }
+        .nav-link:hover { color: var(--rosa-f); background-color: rgba(252, 228, 236, 0.3); }
+        .nav-link.active { color: var(--rosa-f) !important; background-color: var(--rosa-p) !important; border-bottom: 3px solid var(--rosa-f) !important; }
+        
+        .badge-pro { background-color: #e3f2fd; color: #0d6efd; font-weight: 600; border-radius: 10px; padding: 5px 10px; }
+        .badge-hora { background-color: var(--rosa-p); color: var(--rosa-f); font-weight: bold; border-radius: 10px; padding: 5px 10px; }
+        .badge-citas { background-color: #e8f5e9; color: #2e7d32; font-weight: bold; border-radius: 10px; padding: 4px 8px; font-size: 0.8rem; }
+        
+        .sub-cita { font-size: 0.8rem; background-color: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 3px 8px; margin-right: 5px; display: inline-block; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5" style="max-width: 1050px;">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <a href="index.html" class="text-decoration-none small" style="color: var(--rosa-f)">← Volver al Inicio</a>
+                <h3 class="mt-1 fw-bold" style="color: var(--rosa-f);">🌸 Panel de Control General</h3>
+                <p class="text-muted small mb-0">Gestión global de la clínica - Visión de Administrador (HU#7)</p>
+            </div>
+        </div>
+
+        <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="servicios-tab" data-bs-toggle="tab" data-bs-target="#panel-servicios" type="button" role="tab">🛠️ Catálogo de Servicios</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="calendario-tab" data-bs-toggle="tab" data-bs-target="#panel-calendario" type="button" role="tab">📅 Calendario Maestro</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="usuarios-tab" data-bs-toggle="tab" data-bs-target="#panel-usuarios" type="button" role="tab">👥 Base de Usuarios</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="adminTabsContent">
+            
+            <div class="tab-pane fade show active" id="panel-servicios" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Tratamientos Vigentes</h5>
+                    <button class="btn btn-nuevo shadow-sm btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoServicio">+ Nuevo Servicio</button>
+                </div>
+                <div class="card card-custom shadow-sm p-3">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr><th>Servicio y Descripción</th><th>Duración</th><th>Precio</th><th class="text-center">Acciones</th></tr>
+                        </thead>
+                        <tbody id="tabla-servicios" class="align-middle">
+                            <tr><td colspan="4" class="text-muted text-center small">Cargando catálogo...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="panel-calendario" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Monitoreo Central de Turnos Agendados</h5>
+                    <span class="badge bg-white text-dark border shadow-sm px-3 py-2 rounded-pill small">Control de Colisiones Sincronizado</span>
+                </div>
+                <div class="card card-custom shadow-sm p-3">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr><th>Horario / Fecha</th><th>Cliente ID</th><th>Tratamiento Solicitado</th><th>Profesional Asignado</th><th class="text-center">Acciones Administrativas</th></tr>
+                        </thead>
+                        <tbody id="tabla-maestra-turnos" class="align-middle">
+                            <tr><td colspan="5" class="text-muted text-center small">Cargando agenda global...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="panel-usuarios" role="tabpanel">
+                <div class="mb-5">
+                    <h5 class="fw-bold mb-3" style="color: var(--rosa-f);">👩‍⚕️ Staff Profesional Registrado</h5>
+                    <div class="card card-custom shadow-sm p-3">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr><th>Especialista</th><th>Especialidad / Rol</th><th>N° Matrícula</th><th>Citas Activas</th></tr>
+                            </thead>
+                            <tbody id="tabla-staff-dinamico" class="align-middle">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card card-custom shadow-sm p-3">
+                    <h5 class="fw-bold mb-3" style="color: var(--rosa-f);">👤 Fichero de Clientes Activos</h5>
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr><th>Nombre y Apellido</th><th>Email / Datos</th><th>Historial de Citas de este Cliente</th></tr>
+                        </thead>
+                        <tbody id="tabla-clientes-dinamica" class="align-middle">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalNuevoServicio" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header">
+                    <h5 class="modal-title" style="color: var(--rosa-f); font-weight: bold;">✨ Agregar Tratamiento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Nombre del Servicio</label>
+                        <input type="text" id="nuevo-nombre" class="form-control rounded-pill" placeholder="Ej: Perfilado de Cejas">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Duración</label>
+                        <input type="text" id="nuevo-duracion" class="form-control rounded-pill" placeholder="Ej: 45 min">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Precio</label>
+                        <input type="text" id="nuevo-precio" class="form-control rounded-pill" placeholder="Ej: 2000">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Descripción del Servicio</label>
+                        <textarea id="nuevo-descripcion" class="form-control" rows="3" style="border-radius: 15px;" placeholder="Explique brevemente el procedimiento..."></textarea>
+                    </div>
+                    <button class="btn btn-rosa w-100 py-2 rounded-pill" onclick="agregarServicioLocal()">Guardamiento Tratamiento</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        let serviciosCache = [];
+
+        // AL CARGAR LA PÁGINA: SINCRONIZAR ABSOLUTAMENTE TODO
+        document.addEventListener("DOMContentLoaded", async () => {
+            await cargarServiciosDesdeBackend();
+            await cargarTurnosYUsuariosDesdeBackend();
+        });
+
+        // 1. LEER SERVICIOS DEL BACKEND
+        async function cargarServiciosDesdeBackend() {
+            try {
+                const respuesta = await fetch(`${window.location.origin}/api/servicios`);
+                serviciosCache = await respuesta.json();
+                
+                const tabla = document.getElementById('tabla-servicios');
+                tabla.innerHTML = '';
+                
+                serviciosCache.forEach(s => {
+                    tabla.innerHTML += `
+                        <tr id="fila-${s.id}">
+                            <td>
+                                <span class="nombre d-block fw-bold">${s.nombre}</span>
+                                <small class="descripcion text-muted">${s.descripcion || 'Sin descripción.'}</small>
+                            </td>
+                            <td>${s.duracion} min</td>
+                            <td>$${s.precio}</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-link text-danger text-decoration-none" onclick="borrarFila(${s.id})">Borrar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (error) {
+                console.error("Error al cargar servicios:", error);
+            }
+        }
+
+        // 2. LEER TURNOS DEL BACKEND Y REPARTIR EN LAS PESTAÑAS 2 Y 3 SIMULTÁNEAMENTE
+        async function cargarTurnosYUsuariosDesdeBackend() {
+            try {
+                const respuesta = await fetch(`${window.location.origin}/api/turnos/maestro`);
+                const turnos = await respuesta.json();
+                
+                // --- PROCESAR PESTAÑA 2: CALENDARIO MAESTRO ---
+                const tablaTurnos = document.getElementById('tabla-maestra-turnos');
+                tablaTurnos.innerHTML = '';
+                
+                if(turnos.length === 0) {
+                    tablaTurnos.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">No hay citas registradas en el servidor.</td></tr>`;
+                } else {
+                    turnos.forEach(t => {
+                        const especialista = (t.profesional_id === 2 || t.professional_id === 2) ? "Estet. Lucía Gómez" : "Dra. Ana Valenzuela";
+                        const serv = serviciosCache.find(s => s.id === t.servicio_id);
+                        const nombreServicio = serv ? serv.nombre : `Servicio ID: ${t.servicio_id}`;
+
+                        tablaTurnos.innerHTML += `
+                            <tr id="turno-maestro-${t.id}">
+                                <td><span class="badge badge-hora">${t.fecha_hora}</span></td>
+                                <td class="fw-bold text-secondary">Paciente ID: ${t.cliente_id}</td>
+                                <td><strong>${nombreServicio}</strong></td>
+                                <td><span class="badge badge-pro">${especialista}</span></td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-danger rounded-pill px-3" style="font-size:0.8rem;" onclick="eliminarTurnoLocal(${t.id})">Suspender</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+
+                // --- PROCESAR PESTAÑA 3: CONTADORES Y MAPEOS DE USUARIOS ---
+                // Filtrar turnos por cada profesional para calcular sus totales reales
+                const citasAna = turnos.filter(t => t.profesional_id === 1);
+                const citasLucia = turnos.filter(t => t.profesional_id === 2);
+
+                // Inyectar en la tabla del Staff Profesional
+                const tablaStaff = document.getElementById('tabla-staff-dinamico');
+                tablaStaff.innerHTML = `
+                    <tr>
+                        <td class="fw-bold">Dra. Ana Valenzuela</td>
+                        <td>Dermatocosmiatra Médica</td>
+                        <td><code>MN-45982</code></td>
+                        <td><span class="badge badge-citas">${citasAna.length} asignadas</span></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Estet. Lucía Gómez</td>
+                        <td>Terapeuta Corporal y Masoterapeuta</td>
+                        <td><code>RE-12844</code></td>
+                        <td><span class="badge badge-citas">${citasLucia.length} asignadas</span></td>
+                    </tr>
+                `;
+
+                // Construir los bloques visuales para el Fichero de Clientes
+                const tablaClientes = document.getElementById('tabla-clientes-dinamica');
+                
+                // Agrupamos dinámicamente las citas pertenecientes al Cliente ID: 10
+                const citasCliente10 = turnos.filter(t => t.cliente_id === 10);
+                let htmlCitas10 = '';
+                
+                if(citasCliente10.length === 0) {
+                    htmlCitas10 = '<span class="text-muted small">Sin citas agendadas actualmente.</span>';
+                } else {
+                    citasCliente10.forEach(c => {
+                        const sFound = serviciosCache.find(s => s.id === c.servicio_id);
+                        const sName = sFound ? sFound.nombre : "Tratamiento";
+                        htmlCitas10 += `<div class="sub-cita">🌸 <b>${sName}</b> (${c.fecha_hora})</div>`;
+                    });
+                }
+
+                // Agrupamos dinámicamente las citas pertenecientes al Cliente ID: 11
+                const citasCliente11 = turnos.filter(t => t.cliente_id === 11);
+                let htmlCitas11 = '';
+                
+                if(citasCliente11.length === 0) {
+                    htmlCitas11 = '<span class="text-muted small">Sin citas agendadas actualmente.</span>';
+                } else {
+                    citasCliente11.forEach(c => {
+                        const sFound = serviciosCache.find(s => s.id === c.servicio_id);
+                        const sName = sFound ? sFound.nombre : "Tratamiento";
+                        htmlCitas11 += `<div class="sub-cita">🌸 <b>${sName}</b> (${c.fecha_hora})</div>`;
+                    });
+                }
+
+                // Inyectamos las filas de los clientes con sus respectivos arreglos de citas dinámicas
+                tablaClientes.innerHTML = `
+                    <tr>
+                        <td class="fw-bold">María López (ID: 10)</td>
+                        <td>maria.lopez@gmail.com <br><small class="text-muted">Tel: +54 11 5489-2211</small></td>
+                        <td>${htmlCitas10}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Carlos Pérez (ID: 11)</td>
+                        <td>carlos.perez@gmail.com <br><small class="text-muted">Tel: +54 11 6599-3344</small></td>
+                        <td>${htmlCitas11}</td>
+                    </tr>
+                `;
+
+            } catch (error) {
+                console.error("Error al procesar la sincronización de usuarios:", error);
+            }
+        }
+
+        // Guardado local de servicios
+        function agregarServicioLocal() {
+            const nombre = document.getElementById('nuevo-nombre').value.trim();
+            const duracion = document.getElementById('nuevo-duracion').value.trim();
+            const precio = document.getElementById('nuevo-precio').value.trim();
+            const descripcion = document.getElementById('nuevo-descripcion').value.trim();
+
+            if (!nombre || !duracion || !precio || !descripcion) {
+                alert("Complete todos los campos.");
+                return;
+            }
+
+            const tabla = document.getElementById('tabla-servicios');
+            const nuevoId = serviciosCache.length + 5;
+            
+            const nuevaFila = document.createElement('tr');
+            nuevaFila.id = `fila-${nuevoId}`;
+            nuevaFila.innerHTML = `
+                <td>
+                    <span class="nombre d-block fw-bold">${nombre}</span>
+                    <small class="descripcion text-muted">${descripcion}</small>
+                </td>
+                <td>${duracion} min</td>
+                <td>$${precio}</td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-link text-danger text-decoration-none" onclick="borrarFila(${nuevoId})">Borrar</button>
+                </td>
+            `;
+            tabla.appendChild(nuevaFila);
+            bootstrap.Modal.getInstance(document.getElementById('modalNuevoServicio')).hide();
+        }
+
+        function borrarFila(id) {
+            if(confirm("¿Eliminar tratamiento?")) document.getElementById(`fila-${id}`).remove();
+        }
+
+        function eliminarTurnoLocal(id) {
+            if(confirm("¿Deseas suspender administrativamente este turno?")) {
+                document.getElementById(`turno-maestro-${id}`).remove();
+            }
+        }
+    </script>
+</body>
+</html>

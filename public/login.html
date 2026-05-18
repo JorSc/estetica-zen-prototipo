@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Estética Zen</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { 
+            background: linear-gradient(135deg, #fce4ec 0%, #fff9fb 100%); 
+            height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-family: 'Segoe UI', sans-serif; 
+        }
+        .card-login { 
+            width: 380px; 
+            border: none; 
+            border-radius: 30px; 
+            padding: 30px; 
+            background: white; 
+        }
+        .btn-login { 
+            background-color: #f06292; 
+            color: white; 
+            border-radius: 25px; 
+            font-weight: 600; 
+            transition: 0.3s; 
+        }
+        .btn-login:hover { 
+            background-color: #ec407a; 
+            color: white; 
+            transform: scale(1.02); 
+        }
+        .form-control { 
+            border-color: #f8bbd0; 
+        }
+        .form-control:focus {
+            border-color: #f06292;
+            box-shadow: 0 0 0 0.25rem rgba(240, 98, 146, 0.25);
+        }
+        .modal-content { border-radius: 25px; border: none; }
+        .modal-header { background-color: #fce4ec; border-bottom: 2px solid #f8bbd0; border-top-left-radius: 25px; border-top-right-radius: 25px; }
+        
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .toast-rosa { animation: slideIn 0.3s ease forwards; }
+    </style>
+</head>
+<body>
+
+    <div class="card card-login shadow-lg text-center">
+        <div class="card-body">
+            <h3 class="mb-2" style="color: #f06292; font-weight: bold;">🌸 Estética Zen</h3>
+            <p class="text-muted small mb-4">Ingresa para gestionar tus turnos</p>
+            
+            <div class="alert alert-info small text-start p-2 mb-3" style="font-size: 0.73rem; border-color: #bfe5f3; background-color: #e3f2fd;">
+                <strong>💡 Tip para la Evaluación (HU#1):</strong><br>
+                • <code>admin@zen.com</code> $\rightarrow$ Vista Administrador.<br>
+                • <code>pro@zen.com</code> $\rightarrow$ Vista Agenda Profesional.<br>
+                • Cualquier otro correo ingresará como Cliente.
+            </div>
+
+            <div class="mb-3 text-start">
+                <label class="form-label small fw-bold">Email</label>
+                <input type="email" id="email" class="form-control rounded-pill" placeholder="ejemplo@correo.com" value="maria.lopez@gmail.com">
+            </div>
+            <div class="mb-4 text-start">
+                <label class="form-label small fw-bold">Contraseña</label>
+                <input type="password" id="password" class="form-control rounded-pill" placeholder="••••••••" value="123456">
+            </div>
+            
+            <button class="btn btn-login w-100 py-2 mb-3 shadow-sm" onclick="simularLogin()">INGRESAR</button>
+            
+            <p class="small text-muted mb-3">¿No tienes cuenta? <a href="#" data-bs-toggle="modal" data-bs-target="#modalRegistro" style="color: #f06292; font-weight: 600; text-decoration: none;">Regístrate aquí</a></p>
+            
+            <a href="index.html" class="small text-muted text-decoration-none">← Volver a la Landing</a>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalRegistro" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header">
+                    <h5 class="modal-title" style="color: #f06292; font-weight: bold;">👤 Crear Cuenta de Cliente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 text-start">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Nombre y Apellido</label>
+                        <input type="text" id="reg-nombre" class="form-control rounded-pill" placeholder="Ej: Ana Clara Pérez">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Teléfono</label>
+                        <input type="text" id="reg-telefono" class="form-control rounded-pill" placeholder="Ej: +54 11 1234-5678">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Email</label>
+                        <input type="email" id="reg-email" class="form-control rounded-pill" placeholder="ejemplo@correo.com">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Contraseña</label>
+                        <input type="password" id="reg-pass" class="form-control rounded-pill" placeholder="••••••••">
+                    </div>
+                    <button class="btn btn-login w-100 py-2 rounded-pill shadow-sm" onclick="procesarRegistro()">CREAR CUENTA E INGRESAR</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function lanzarToast(mensaje) {
+            const aviso = document.createElement('div');
+            aviso.className = 'toast-rosa';
+            aviso.style.position = 'fixed';
+            aviso.style.bottom = '20px';
+            aviso.style.right = '20px';
+            aviso.style.backgroundColor = '#f06292';
+            aviso.style.color = 'white';
+            aviso.style.padding = '15px 25px';
+            aviso.style.borderRadius = '15px';
+            aviso.style.boxShadow = '0 4px 15px rgba(0,0,0,0.15)';
+            aviso.style.zIndex = '9999';
+            aviso.style.fontWeight = '600';
+            aviso.innerText = mensaje;
+            document.body.appendChild(aviso);
+        }
+
+        function simularLogin() {
+            const email = document.getElementById('email').value.trim();
+            if(!email) { alert("Por favor ingresa un correo electrónico."); return; }
+
+            if(email === 'admin@zen.com') {
+                lanzarToast("🔓 ¡Acceso concedido como Administrador! Redirigiendo...");
+                setTimeout(() => { window.location.href = 'admin.html'; }, 1100);
+            } else if(email === 'pro@zen.com') {
+                lanzarToast("🔓 ¡Acceso concedido como Profesional! Redirigiendo...");
+                setTimeout(() => { window.location.href = 'profesional.html'; }, 1100);
+            } else {
+                lanzarToast(`🔓 ¡Bienvenido de vuelta, Cliente! Accediendo al portal de reservas...`);
+                setTimeout(() => { window.location.href = 'reserva.html'; }, 1100);
+            }
+        }
+
+        function procesarRegistro() {
+            const nombre = document.getElementById('reg-nombre').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            
+            if(!nombre || !email) {
+                alert("Por favor complete los campos obligatorios (Nombre y Email).");
+                return;
+            }
+
+            // Ocultar modal de registro
+            bootstrap.Modal.getInstance(document.getElementById('modalRegistro')).hide();
+            
+            // Lanzar aviso de éxito y redirigir
+            lanzarToast(`🎉 ¡Cuenta creada con éxito! Bienvenido/a ${nombre}. Redirigiendo a turnos...`);
+            setTimeout(() => {
+                window.location.href = 'reserva.html';
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

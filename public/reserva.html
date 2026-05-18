@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservar Cita - Estética Zen</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { 
+            --rosa-p: #fce4ec; 
+            --rosa-f: #f06292; 
+            --rosa-h: #f8bbd0; 
+            --texto-oscuro: #4f4f4f;
+        }
+        body { 
+            background-color: #fff9fb; 
+            color: var(--texto-oscuro); 
+            font-family: 'Segoe UI', sans-serif; 
+        }
+        .navbar { 
+            background-color: white; 
+            border-bottom: 2px solid var(--rosa-p); 
+        }
+        .card-service { 
+            border: 1px solid var(--rosa-h); 
+            transition: 0.3s; 
+            cursor: pointer; 
+            border-radius: 15px; 
+        }
+        .card-service:hover { 
+            background-color: var(--rosa-p); 
+            transform: translateY(-3px); 
+        }
+        .card-service.selected {
+            border: 2px solid var(--rosa-f);
+            background-color: var(--rosa-p);
+        }
+        
+        /* Contenedor animado para la descripción del servicio */
+        .box-descripcion {
+            background-color: #fff;
+            border-left: 4px solid var(--rosa-f);
+            border-radius: 15px;
+            display: none; 
+            animation: fadeIn 0.4s ease forwards;
+        }
+        
+        .time-slot { 
+            border: 1px solid var(--rosa-h); 
+            padding: 10px; 
+            border-radius: 20px; 
+            text-align: center; 
+            margin-bottom: 10px; 
+            background: white; 
+            transition: 0.2s; 
+            cursor: pointer; 
+        }
+        .time-slot:hover { 
+            background-color: var(--rosa-f); 
+            color: white; 
+        }
+        .time-slot.occupied { 
+            background-color: #f1f1f1; 
+            color: #ccc; 
+            cursor: not-allowed; 
+            border-color: #eee; 
+        }
+        .btn-confirmar { 
+            background-color: var(--rosa-f); 
+            color: white; 
+            border-radius: 25px; 
+            font-weight: bold; 
+        }
+        .btn-confirmar:hover {
+            background-color: #ec407a;
+            color: white;
+        }
+        .modal-content { border-radius: 25px; border: none; }
+        .modal-header { background-color: var(--rosa-p); border-bottom: 2px solid var(--rosa-h); }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    
+    <nav class="navbar navbar-light px-4 py-3 shadow-sm mb-5">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <div>
+                <a href="index.html" class="text-decoration-none small me-3" style="color: var(--rosa-f)">← Volver al Inicio</a>
+                <span class="navbar-brand h1 mb-0" style="color: var(--rosa-f);">🌸 ESTÉTICA ZEN</span>
+            </div>
+            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalMisTurnos">📋 Mis Turnos</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row g-4">
+            
+            <div class="col-md-5">
+                <h5 class="mb-4 fw-bold">1. Elige tu tratamiento</h5>
+                <div id="contenedor-servicios">
+                    <div class="text-muted small">Cargando tratamientos desde el servidor...</div>
+                </div>
+                
+                <div id="info-descripcion" class="box-descripcion p-3 shadow-sm mt-3">
+                    <h6 class="fw-bold mb-1" style="color: var(--rosa-f);">✨ Detalle del Servicio:</h6>
+                    <p id="txt-descripcion" class="small text-muted mb-0" style="line-height: 1.4;"></p>
+                </div>
+            </div>
+            
+            <div class="col-md-7">
+                <h5 class="mb-4 fw-bold">2. Agenda tu cita</h5>
+                <div class="card p-4 shadow-sm border-0 rounded-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Profesional Asignado</label>
+                            <select class="form-select rounded-pill" id="select-profesional">
+                                <option value="1">Dra. Ana Valenzuela (Cosmiatra)</option>
+                                <option value="2">Estet. Lucía Gómez (Masoterapeuta)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Fecha</label>
+                            <input type="date" class="form-control rounded-pill" id="input-fecha">
+                        </div>
+                    </div>
+                    
+                    <div class="row text-center">
+                        <p class="small fw-bold text-start">Horarios Disponibles para Hoy:</p>
+                        <div class="col-3"><div class="time-slot" onclick="seleccionarHora('09:00', this)">09:00</div></div>
+                        <div class="col-3"><div class="time-slot occupied">10:00</div></div>
+                        <div class="col-3"><div class="time-slot" onclick="seleccionarHora('11:00', this)">11:00</div></div>
+                        <div class="col-3"><div class="time-slot" onclick="seleccionarHora('12:00', this)">12:00</div></div>
+                    </div>
+                    
+                    <button class="btn btn-confirmar w-100 mt-4 p-3 shadow" onclick="enviarReserva()">RESERVAR AHORA</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalMisTurnos" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header">
+                    <h5 class="modal-title" style="color: var(--rosa-f); font-weight: bold;">📋 Mis Turnos Agendados</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">Aquí puedes revisar tus próximas citas o cancelarlas si tienes un imprevisto.</p>
+                    <div id="lista-mis-turnos">
+                        <div class="card p-3 mb-2 border-0 shadow-sm" id="turno-cliente-1" style="background-color: #fff9fb; border-left: 4px solid var(--rosa-f) !important;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1 fw-bold" style="color: var(--rosa-f)">Limpieza Facial Premium</h6>
+                                    <p class="mb-0 small text-muted">📅 28 de Mayo | 🕒 09:00 AM</p>
+                                    <p class="mb-0 small text-muted">👩‍⚕️ Dra. Ana Valenzuela</p>
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger rounded-pill px-2" style="font-size: 0.75rem;" onclick="cancelarTurnoCliente(1)">Cancelar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        let servicioSeleccionadoId = null;
+        let horaSeleccionada = null;
+        let serviciosCache = []; 
+
+        // 1. CARGAR SERVICIOS DESDE EL SERVIDOR (HU#2) - RUTA ADAPTATIVA INTELIGENTE
+        document.addEventListener("DOMContentLoaded", async () => {
+            try {
+                const urlServicios = `${window.location.origin}/api/servicios`;
+                const respuesta = await fetch(urlServicios);
+                serviciosCache = await respuesta.json(); 
+                
+                const contenedor = document.getElementById('contenedor-servicios');
+                contenedor.innerHTML = '';
+                
+                serviciosCache.forEach(servicio => {
+                    contenedor.innerHTML += `
+                        <div class="card mb-3 card-service shadow-sm" id="servicio-${servicio.id}" onclick="seleccionarServicio(${servicio.id})">
+                            <div class="card-body">
+                                <h6 class="mb-1 fw-bold">${servicio.nombre}</h6>
+                                <p class="text-muted small mb-0">✨ ${servicio.duracion} min | $${servicio.precio}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error("Error al cargar servicios desde Node:", error);
+            }
+        });
+
+        function seleccionarServicio(id) {
+            servicioSeleccionadoId = id;
+            
+            document.querySelectorAll('.card-service').forEach(c => c.classList.remove('selected'));
+            document.getElementById(`servicio-${id}`).classList.add('selected');
+            
+            const servicioEncontrado = serviciosCache.find(s => s.id === id);
+            if(servicioEncontrado && servicioEncontrado.descripcion) {
+                document.getElementById('txt-descripcion').innerText = servicioEncontrado.descripcion;
+                document.getElementById('info-descripcion').style.display = 'block';
+            }
+        }
+
+        function seleccionarHora(hora, elemento) {
+            horaSeleccionada = hora;
+            document.querySelectorAll('.time-slot').forEach(t => {
+                if(!t.classList.contains('occupied')) {
+                    t.style.backgroundColor = 'white';
+                    t.style.color = '#4f4f4f';
+                }
+            });
+            elemento.style.backgroundColor = '#f06292';
+            elemento.style.color = 'white';
+        }
+
+        // 2. ENVIAR RESERVA AL SERVIDOR (HU#3) - RUTA ADAPTATIVA CON INTERFAZ DINÁMICA
+        async function enviarReserva() {
+            const profesionalSelect = document.getElementById('select-profesional');
+            const profesionalId = profesionalSelect.value;
+            const profesionalNombre = profesionalSelect.options[profesionalSelect.selectedIndex].text;
+            const fecha = document.getElementById('input-fecha').value;
+
+            if (!servicioSeleccionadoId || !horaSeleccionada || !fecha) {
+                alert("Por favor, selecciona un tratamiento, una fecha y un horario válido.");
+                return;
+            }
+
+            const datosTurno = {
+                cliente_id: 10,
+                profesional_id: parseInt(profesionalId),
+                servicio_id: servicioSeleccionadoId,
+                fecha_hora: `${fecha} ${horaSeleccionada}`
+            };
+
+            try {
+                const urlReserva = `${window.location.origin}/api/turnos/reserva`;
+                const respuesta = await fetch(urlReserva, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datosTurno)
+                });
+
+                const resultado = await respuesta.json();
+
+                if (respuesta.ok) {
+                    alert(`🎉 ¡Éxito! ${resultado.mensaje}`);
+
+                    // === INTERFAZ EN TIEMPO REAL: Inyectar nueva tarjeta en el Modal ===
+                    const contenedorMisTurnos = document.getElementById('lista-mis-turnos');
+                    const servicioEncontrado = serviciosCache.find(s => s.id === servicioSeleccionadoId);
+                    const nombreServicio = servicioEncontrado ? servicioEncontrado.nombre : "Tratamiento Estético";
+                    
+                    if (contenedorMisTurnos.innerHTML.includes("No tienes turnos activos")) {
+                        contenedorMisTurnos.innerHTML = '';
+                    }
+
+                    const nuevoIdTurno = resultado.turno.id;
+                    contenedorMisTurnos.innerHTML += `
+                        <div class="card p-3 mb-2 border-0 shadow-sm" id="turno-cliente-${nuevoIdTurno}" style="background-color: #fff9fb; border-left: 4px solid var(--rosa-f) !important; animation: fadeIn 0.5s ease;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1 fw-bold" style="color: var(--rosa-f)">${nombreServicio}</h6>
+                                    <p class="mb-0 small text-muted">📅 ${fecha} | 🕒 ${horaSeleccionada}</p>
+                                    <p class="mb-0 small text-muted">👩‍⚕️ ${profesionalNombre.split('(')[0].trim()}</p>
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger rounded-pill px-2" style="font-size: 0.75rem;" onclick="cancelarTurnoCliente(${nuevoIdTurno})">Cancelar</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    alert(`❌ Error del Servidor: ${resultado.error}`);
+                }
+            } catch (error) {
+                alert("Hubo un error de conexión al procesar la reserva con el servidor. Verifique que la terminal de Node esté encendida.");
+            }
+        }
+
+        function cancelarTurnoCliente(id) {
+            if(confirm("¿Seguro que deseas cancelar esta cita agendada?")) {
+                document.getElementById(`turno-cliente-${id}`).remove();
+                const lista = document.getElementById('lista-mis-turnos');
+                if(lista.children.length === 0) {
+                    lista.innerHTML = `<div class="text-muted text-center small py-3">No tienes turnos activos en este momento.</div>`;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
