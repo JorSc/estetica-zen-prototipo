@@ -1,16 +1,12 @@
 {
     "name": "estetica-zen-prototipo",
     "version": "1.0.0",
-    "description": "Prototipo de Estética Zen con persistencia en SQL",
+    "description": "Prototipo de Estética Zen",
     "main": "server.js",
     "scripts": {
-        "start": "node server.js"
+      "start": "node server.js"
     },
     "dependencies": {
-        "@neondatabase/serverless": "^0.1.13",
-        "express": "^4.22.2"
-    },
-    "engines": {
-        "node": ">=18"
+      "express": "^4.19.2"
     }
-}
+  }
