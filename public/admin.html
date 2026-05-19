@@ -14,7 +14,7 @@
         }
         body { background-color: #fff9fb; font-family: 'Segoe UI', sans-serif; color: var(--texto-oscuro); }
         .btn-nuevo { background-color: var(--rosa-f); color: white; border-radius: 25px; border: none; padding: 10px 25px; font-weight: 600; transition: 0.3s; }
-        .btn-nuevo:hover { background-color: #ec407a; color: white; transform: scale(1.02); }
+        .btn-nuevo:hover { background-color: #ec407a; color: white; }
         .card-custom { border-radius: 20px; border: none; background: white; }
         .modal-content { border-radius: 25px; border: none; }
         .modal-header { background-color: var(--rosa-p); border-bottom: 2px solid var(--rosa-h); border-top-left-radius: 25px; border-top-right-radius: 25px; }
@@ -23,40 +23,50 @@
         .form-control, .form-select { border-color: var(--rosa-h); }
         .form-control:focus, .form-select:focus { border-color: var(--rosa-f); box-shadow: 0 0 0 0.25rem rgba(240, 98, 146, 0.25); }
         
-        /* Pestañas (Tabs) */
         .nav-tabs { border-bottom: 2px solid var(--rosa-p); }
         .nav-link { color: #888; font-weight: 600; border: none !important; margin-right: 10px; border-radius: 15px 15px 0 0 !important; }
-        .nav-link:hover { color: var(--rosa-f); background-color: rgba(252, 228, 236, 0.3); }
         .nav-link.active { color: var(--rosa-f) !important; background-color: var(--rosa-p) !important; border-bottom: 3px solid var(--rosa-f) !important; }
         
         .badge-pro { background-color: #e3f2fd; color: #0d6efd; font-weight: 600; border-radius: 10px; padding: 5px 10px; }
         .badge-hora { background-color: var(--rosa-p); color: var(--rosa-f); font-weight: bold; border-radius: 10px; padding: 5px 10px; }
-        .badge-citas { background-color: #e8f5e9; color: #2e7d32; font-weight: bold; border-radius: 10px; padding: 4px 8px; font-size: 0.8rem; }
-        
-        .sub-cita { font-size: 0.8rem; background-color: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 3px 8px; margin-right: 5px; display: inline-block; margin-top: 4px; }
+        .sub-cita { font-size: 0.8rem; background-color: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 6px 10px; margin-right: 5px; display: inline-block; margin-top: 6px; }
+        .box-contabilidad { background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%); color: #fff; border-radius: 20px; padding: 20px; }
+
+        /* 📅 ESTILOS DE LA GRILLA DEL CALENDARIO MAESTRO */
+        .calendar-wrapper { max-width: 450px; margin: 0 auto 25px auto; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); border: 1px solid var(--rosa-p); }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
+        .calendar-day-header { font-weight: bold; font-size: 0.8rem; color: #aaa; padding-bottom: 5px; }
+        .calendar-cell { background: #fafafa; border-radius: 10px; padding: 10px 0; font-size: 0.9rem; cursor: pointer; position: relative; min-height: 45px; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .calendar-cell:hover { background: var(--rosa-p); color: var(--rosa-f); }
+        .calendar-cell.active-day { background: var(--rosa-f) !important; color: white !important; font-weight: bold; }
+        .calendar-cell .dot-indicator { width: 6px; height: 6px; background-color: var(--rosa-f); border-radius: 50%; position: absolute; bottom: 4px; }
+        .calendar-cell.active-day .dot-indicator { background-color: white; }
+        .calendar-cell.empty-cell { background: transparent; cursor: default; }
     </style>
 </head>
 <body>
-    <div class="container mt-5" style="max-width: 1050px;">
+    <div class="container mt-5" style="max-width: 1100px;">
         
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <a href="index.html" class="text-decoration-none small" style="color: var(--rosa-f)">← Volver al Inicio</a>
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <a href="index.html" class="text-decoration-none small" style="color: var(--rosa-f)">← Volver al Inicio</a>
+                    <button class="btn btn-xs btn-outline-danger rounded-pill px-2 py-0 small" style="font-size: 0.75rem;" onclick="cerrarSesionAdmin()">Cerrar Sesión</button>
+                </div>
                 <h3 class="mt-1 fw-bold" style="color: var(--rosa-f);">🌸 Panel de Control General</h3>
-                <p class="text-muted small mb-0">Gestión global de la clínica - Visión de Administrador (HU#7)</p>
+                <p class="text-muted small mb-0">Gestión global de la clínica - Visión de Administrador Sincronizado</p>
+            </div>
+            <div class="box-contabilidad shadow-sm text-end">
+                <span class="small text-muted d-block" style="color: #f8bbd0 !important;">💰 Facturación Estimada</span>
+                <h4 class="fw-bold mb-0" id="txt-total-caja">$0</h4>
             </div>
         </div>
 
         <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="servicios-tab" data-bs-toggle="tab" data-bs-target="#panel-servicios" type="button" role="tab">🛠️ Catálogo de Servicios</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="calendario-tab" data-bs-toggle="tab" data-bs-target="#panel-calendario" type="button" role="tab">📅 Calendario Maestro</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="usuarios-tab" data-bs-toggle="tab" data-bs-target="#panel-usuarios" type="button" role="tab">👥 Base de Usuarios</button>
-            </li>
+            <li class="nav-item"><button class="nav-link active" id="servicios-tab" data-bs-toggle="tab" data-bs-target="#panel-servicios" type="button" role="tab">🛠️ Servicios</button></li>
+            <li class="nav-item"><button class="nav-link" id="calendario-tab" data-bs-toggle="tab" data-bs-target="#panel-calendario" type="button" role="tab">📅 Calendario Maestro</button></li>
+            <li class="nav-item"><button class="nav-link" id="usuarios-tab" data-bs-toggle="tab" data-bs-target="#panel-usuarios" type="button" role="tab">👥 Fichero Personal</button></li>
+            <li class="nav-item"><button class="nav-link" id="clientes-tab" data-bs-toggle="tab" data-bs-target="#panel-clientes" type="button" role="tab">👤 Fichero Clientes</button></li>
         </ul>
 
         <div class="tab-content" id="adminTabsContent">
@@ -64,59 +74,78 @@
             <div class="tab-pane fade show active" id="panel-servicios" role="tabpanel">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="fw-bold mb-0">Tratamientos Vigentes</h5>
-                    <button class="btn btn-nuevo shadow-sm btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoServicio">+ Nuevo Servicio</button>
+                    <button class="btn btn-nuevo shadow-sm btn-sm" onclick="abrirModalCrear()">+ Nuevo Servicio</button>
                 </div>
                 <div class="card card-custom shadow-sm p-3">
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
-                            <tr><th>Servicio y Descripción</th><th>Duración</th><th>Precio</th><th class="text-center">Acciones</th></tr>
+                            <tr><th>ID</th><th>Servicio y Descripción</th><th>Duración</th><th>Precio</th><th class="text-center">Acciones</th></tr>
                         </thead>
-                        <tbody id="tabla-servicios" class="align-middle">
-                            <tr><td colspan="4" class="text-muted text-center small">Cargando catálogo...</td></tr>
-                        </tbody>
+                        <tbody id="tabla-servicios" class="align-middle"></tbody>
                     </table>
                 </div>
             </div>
 
             <div class="tab-pane fade" id="panel-calendario" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold mb-0">Monitoreo Central de Turnos Agendados</h5>
-                    <span class="badge bg-white text-dark border shadow-sm px-3 py-2 rounded-pill small">Control de Colisiones Sincronizado</span>
-                </div>
-                <div class="card card-custom shadow-sm p-3">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr><th>Horario / Fecha</th><th>Cliente ID</th><th>Tratamiento Solicitado</th><th>Profesional Asignado</th><th class="text-center">Acciones Administrativas</th></tr>
-                        </thead>
-                        <tbody id="tabla-maestra-turnos" class="align-middle">
-                            <tr><td colspan="5" class="text-muted text-center small">Cargando agenda global...</td></tr>
-                        </tbody>
-                    </table>
+                <div class="row">
+                    <div class="col-md-5">
+                        <h5 class="fw-bold mb-3">Navegación de Agenda</h5>
+                        <div class="calendar-wrapper shadow-sm">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold mb-0" style="color: var(--rosa-f)">Mayo 2026</h6>
+                                <span class="badge bg-secondary rounded-pill p-1 small" style="font-size:0.7rem">Mayo es el mes activo</span>
+                            </div>
+                            <div class="calendar-grid" id="grilla-calendario-visual">
+                                </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-7">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0" id="titulo-filtro-agenda">Citas del Día Seleccionado</h5>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-dark dropdown-toggle rounded-pill px-3 shadow-sm" type="button" data-bs-toggle="dropdown">
+                                    📥 Exportar Listado
+                                </button>
+                                <ul class="dropdown-menu shadow">
+                                    <li><a class="dropdown-menu-item dropdown-item small fw-bold" href="#" onclick="exportarAgendaFormatoExcel('dia')">📋 Exportar el Día Seleccionado</a></li>
+                                    <li><a class="dropdown-menu-item dropdown-item small fw-bold" href="#" onclick="exportarAgendaFormatoExcel('mes')">📊 Exportar Mes Completo</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="card card-custom shadow-sm p-3">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr><th>Bloque</th><th>Paciente</th><th>Tratamiento</th><th>Profesional</th><th class="text-center">Acciones</th></tr>
+                                </thead>
+                                <tbody id="tabla-maestra-turnos" class="align-middle"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="tab-pane fade" id="panel-usuarios" role="tabpanel">
-                <div class="mb-5">
-                    <h5 class="fw-bold mb-3" style="color: var(--rosa-f);">👩‍⚕️ Staff Profesional Registrado</h5>
-                    <div class="card card-custom shadow-sm p-3">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr><th>Especialista</th><th>Especialidad / Rol</th><th>N° Matrícula</th><th>Citas Activas</th></tr>
-                            </thead>
-                            <tbody id="tabla-staff-dinamico" class="align-middle">
-                                </tbody>
-                        </table>
-                    </div>
-                </div>
-
+                <h5 class="fw-bold mb-3" style="color: var(--rosa-f);">Fichero: Personal Técnico</h5>
                 <div class="card card-custom shadow-sm p-3">
-                    <h5 class="fw-bold mb-3" style="color: var(--rosa-f);">👤 Fichero de Clientes Activos</h5>
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
-                            <tr><th>Nombre y Apellido</th><th>Email / Datos</th><th>Historial de Citas de este Cliente</th></tr>
+                            <tr><th>Especialista</th><th>Rol</th><th>Agenda de Citas Activas</th><th class="text-center">Acciones</th></tr>
                         </thead>
-                        <tbody id="tabla-clientes-dinamica" class="align-middle">
-                            </tbody>
+                        <tbody id="tabla-staff-dinamico" class="align-middle"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="panel-clientes" role="tabpanel">
+                <h5 class="fw-bold mb-3" style="color: var(--rosa-f);">Fichero: Registro de Clientes</h5>
+                <div class="card card-custom shadow-sm p-3">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr><th>Nombre de Cliente</th><th>Email</th><th>Historial de Turnos</th><th class="text-center">Acciones Individuales</th></tr>
+                        </thead>
+                        <tbody id="tabla-clientes-dinamica" class="align-middle"></tbody>
                     </table>
                 </div>
             </div>
@@ -124,31 +153,90 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalNuevoServicio" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modalServicio" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content shadow-lg">
                 <div class="modal-header">
-                    <h5 class="modal-title" style="color: var(--rosa-f); font-weight: bold;">✨ Agregar Tratamiento</h5>
+                    <h5 class="modal-title" id="modalTitulo" style="color: var(--rosa-f); font-weight: bold;">✨ Configurar Tratamiento</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
+                    <input type="hidden" id="servicio-id-edicion">
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Nombre del Servicio</label>
-                        <input type="text" id="nuevo-nombre" class="form-control rounded-pill" placeholder="Ej: Perfilado de Cejas">
+                        <input type="text" id="form-nombre" class="form-control rounded-pill" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">Duración</label>
-                        <input type="text" id="nuevo-duracion" class="form-control rounded-pill" placeholder="Ej: 45 min">
+                        <label class="form-label small fw-bold">Duración (minutos)</label>
+                        <input type="number" id="form-duracion" class="form-control rounded-pill" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">Precio</label>
-                        <input type="text" id="nuevo-precio" class="form-control rounded-pill" placeholder="Ej: 2000">
+                        <label class="form-label small fw-bold">Precio ($)</label>
+                        <input type="number" id="form-precio" class="form-control rounded-pill" required>
                     </div>
                     <div class="mb-4">
-                        <label class="form-label small fw-bold">Descripción del Servicio</label>
-                        <textarea id="nuevo-descripcion" class="form-control" rows="3" style="border-radius: 15px;" placeholder="Explique brevemente el procedimiento..."></textarea>
+                        <label class="form-label small fw-bold">Descripción Corta</label>
+                        <textarea id="form-descripcion" class="form-control" rows="3" style="border-radius: 15px;"></textarea>
                     </div>
-                    <button class="btn btn-rosa w-100 py-2 rounded-pill" onclick="agregarServicioLocal()">Guardamiento Tratamiento</button>
+                    <button class="btn btn-rosa w-100 py-2 rounded-pill" onclick="procesarGuardadoServicio()">Confirmar en Base de Datos</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalReprogramar" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" style="color: var(--rosa-f);">🗓️ Reprogramar Cita</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" id="reprog-turno-id">
+                    <input type="hidden" id="reprog-profesional-id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Selecciona Nueva Fecha</label>
+                        <input type="date" id="reprog-fecha" class="form-control rounded-pill" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Selecciona Bloque Horario</label>
+                        <select id="reprog-hora" class="form-select rounded-pill" required>
+                            <option value="09:00">09:00 AM</option>
+                            <option value="10:00">10:00 AM</option>
+                            <option value="11:00">11:00 AM</option>
+                            <option value="12:00">12:00 AM</option>
+                            <option value="13:00">01:00 PM</option>
+                            <option value="14:00">02:00 PM</option>
+                            <option value="15:00">03:00 PM</option>
+                            <option value="16:00">04:00 PM</option>
+                            <option value="17:00">05:00 PM</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-rosa w-100 py-2 rounded-pill" onclick="confirmarReprogramacionBackend()">Actualizar Agenda</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalEditarPersonal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" style="color: var(--rosa-f);">✏️ Editar Especialista</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" id="edit-pro-id">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Nombre Completo</label>
+                        <input type="text" id="edit-pro-nombre" class="form-control rounded-pill" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Rol Técnico / Especialidad</label>
+                        <input type="text" id="edit-pro-rol" class="form-control rounded-pill" required>
+                    </div>
+                    <button class="btn btn-rosa w-100 py-2 rounded-pill" onclick="confirmarEdicionPersonalLocal()">Guardar Ficha</button>
                 </div>
             </div>
         </div>
@@ -158,186 +246,393 @@
 
     <script>
         let serviciosCache = [];
+        let turnosCache = [];
+        let diaSeleccionadoActual = "2026-05-19"; // Fecha de control por defecto (Mayo 2026 académico)
+        
+        let staffFijo = [
+            { id: 1, nombre: "Dra. Ana Valenzuela", rol: "Cosmiatría Médica" },
+            { id: 2, nombre: "Estet. Lucía Gómez", rol: "Masoterapeuta Corporal" }
+        ];
 
-        // AL CARGAR LA PÁGINA: SINCRONIZAR ABSOLUTAMENTE TODO
-        document.addEventListener("DOMContentLoaded", async () => {
-            await cargarServiciosDesdeBackend();
-            await cargarTurnosYUsuariosDesdeBackend();
-        });
+        document.addEventListener("DOMContentLoaded", async () => { await cargarTodo(); });
 
-        // 1. LEER SERVICIOS DEL BACKEND
-        async function cargarServiciosDesdeBackend() {
+        async function cargarTodo() {
+            await cargarServicios();
+            await cargarTurnosYFicheros();
+        }
+
+        async function cargarServicios() {
             try {
-                const respuesta = await fetch(`${window.location.origin}/api/servicios`);
-                serviciosCache = await respuesta.json();
-                
+                const res = await fetch(`${window.location.origin}/api/servicios`);
+                serviciosCache = await res.json();
                 const tabla = document.getElementById('tabla-servicios');
                 tabla.innerHTML = '';
                 
                 serviciosCache.forEach(s => {
                     tabla.innerHTML += `
-                        <tr id="fila-${s.id}">
-                            <td>
-                                <span class="nombre d-block fw-bold">${s.nombre}</span>
-                                <small class="descripcion text-muted">${s.descripcion || 'Sin descripción.'}</small>
-                            </td>
+                        <tr id="fila-servicio-${s.id}">
+                            <td><code>#${s.id}</code></td>
+                            <td><b>${s.nombre}</b><br><small class="text-muted">${s.descripcion}</small></td>
                             <td>${s.duracion} min</td>
-                            <td>$${s.precio}</td>
+                            <td class="fw-bold text-success">$${s.precio}</td>
                             <td class="text-center">
-                                <button class="btn btn-sm btn-link text-danger text-decoration-none" onclick="borrarFila(${s.id})">Borrar</button>
+                                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 me-1" onclick="abrirModalEditar(${s.id})">Editar</button>
+                                <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="eliminarServicio(${s.id})">Borrar</button>
                             </td>
                         </tr>
                     `;
                 });
-            } catch (error) {
-                console.error("Error al cargar servicios:", error);
-            }
+            } catch (error) { console.error(error); }
         }
 
-        // 2. LEER TURNOS DEL BACKEND Y REPARTIR EN LAS PESTAÑAS 2 Y 3 SIMULTÁNEAMENTE
-        async function cargarTurnosYUsuariosDesdeBackend() {
+        async function cargarTurnosYFicheros() {
             try {
-                const respuesta = await fetch(`${window.location.origin}/api/turnos/maestro`);
-                const turnos = await respuesta.json();
+                const res = await fetch(`${window.location.origin}/api/turnos/maestro`);
+                turnosCache = await res.json();
                 
-                // --- PROCESAR PESTAÑA 2: CALENDARIO MAESTRO ---
-                const tablaTurnos = document.getElementById('tabla-maestra-turnos');
-                tablaTurnos.innerHTML = '';
-                
-                if(turnos.length === 0) {
-                    tablaTurnos.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">No hay citas registradas en el servidor.</td></tr>`;
-                } else {
-                    turnos.forEach(t => {
-                        const especialista = (t.profesional_id === 2 || t.professional_id === 2) ? "Estet. Lucía Gómez" : "Dra. Ana Valenzuela";
-                        const serv = serviciosCache.find(s => s.id === t.servicio_id);
-                        const nombreServicio = serv ? serv.nombre : `Servicio ID: ${t.servicio_id}`;
+                const resUsuarios = await fetch(`${window.location.origin}/api/usuarios`);
+                const usuariosTotales = await resUsuarios.json();
 
-                        tablaTurnos.innerHTML += `
-                            <tr id="turno-maestro-${t.id}">
-                                <td><span class="badge badge-hora">${t.fecha_hora}</span></td>
-                                <td class="fw-bold text-secondary">Paciente ID: ${t.cliente_id}</td>
-                                <td><strong>${nombreServicio}</strong></td>
-                                <td><span class="badge badge-pro">${especialista}</span></td>
+                // Calcular la caja total global de la clínica en Neon
+                let acumuladoCaja = 0;
+                turnosCache.forEach(t => {
+                    const serv = serviciosCache.find(s => s.id === t.servicio_id);
+                    if (serv) acumuladoCaja += parseFloat(serv.precio);
+                });
+                document.getElementById('txt-total-caja').innerText = `$${acumuladoCaja}`;
+
+                // 🗓️ RENDERIZAR LA GRILLA DEL CALENDARIO VISUAL (Mayo 2026 de ejemplo académico)
+                renderizarCalendarioVisualMayo2026();
+
+                // Filtrar y renderizar la tabla del día activo
+                filtrarYMostrarCitasPorDia(diaSeleccionadoActual);
+
+                // Render Staff
+                const tablaStaff = document.getElementById('tabla-staff-dinamico');
+                tablaStaff.innerHTML = '';
+                staffFijo.forEach(p => {
+                    const citasPro = turnosCache.filter(t => t.profesional_id === p.id).map(c => `<div class="sub-cita">⏱️ ${c.fecha_hora.split(' ')[1] || c.fecha_hora}</div>`).join('') || 'Sin citas';
+                    tablaStaff.innerHTML += `
+                        <tr id="staff-${p.id}">
+                            <td class="fw-bold text-dark">${p.nombre} (ID: ${p.id})</td><td>${p.rol}</td>
+                            <td>${citasPro}</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="abrirModalEditarPersonal(${p.id})">✏️ Editar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                // Render Clientes
+                const tablaClientes = document.getElementById('tabla-clientes-dinamica');
+                tablaClientes.innerHTML = '';
+                const clientesBD = usuariosTotales.filter(u => u.rol === 'cliente');
+
+                if(clientesBD.length === 0) {
+                    tablaClientes.innerHTML = `<tr><td colspan="4" class="text-center text-muted small py-3">No hay clientes registrados en Neon Cloud.</td></tr>`;
+                } else {
+                    clientesBD.forEach(clie => {
+                        const turnosCliente = turnosCache.filter(t => t.cliente_id === clie.id).map(c => `<div class="sub-cita">🌸 ${c.fecha_hora}</div>`).join('') || 'Sin historial';
+                        tablaClientes.innerHTML += `
+                            <tr id="clie-${clie.id}">
+                                <td class="fw-bold">${clie.nombre} (ID: ${clie.id})</td><td><code>${clie.email}</code></td>
+                                <td>${turnosCliente}</td>
                                 <td class="text-center">
-                                    <button class="btn btn-sm btn-outline-danger rounded-pill px-3" style="font-size:0.8rem;" onclick="eliminarTurnoLocal(${t.id})">Suspender</button>
+                                    <button class="btn btn-sm btn-outline-dark rounded-pill me-1" onclick="bloquearUsuario('${clie.nombre}', 'clie-${clie.id}')">⛔ Bloquear</button>
+                                    <button class="btn btn-sm btn-danger rounded-pill" onclick="eliminarClienteReal(${clie.id}, 'clie-${clie.id}')">🗑️ Eliminar</button>
                                 </td>
                             </tr>
                         `;
                     });
                 }
+            } catch (err) { console.error(err); }
+        }
 
-                // --- PROCESAR PESTAÑA 3: CONTADORES Y MAPEOS DE USUARIOS ---
-                // Filtrar turnos por cada profesional para calcular sus totales reales
-                const citasAna = turnos.filter(t => t.profesional_id === 1);
-                const citasLucia = turnos.filter(t => t.profesional_id === 2);
+        // 🛠️ FUNCIÓN QUE GENERA EL CALENDARIO MENSUAL EN CUADRÍCULA
+        function renderizarCalendarioVisualMayo2026() {
+            const contenedor = document.getElementById('grilla-calendario-visual');
+            contenedor.innerHTML = "";
+            
+            // Cabeceras de días de la semana
+            const diasSemana = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'];
+            diasSemana.forEach(d => {
+                contenedor.innerHTML += `<div class="calendar-day-header">${d}</div>`;
+            });
 
-                // Inyectar en la tabla del Staff Profesional
-                const tablaStaff = document.getElementById('tabla-staff-dinamico');
-                tablaStaff.innerHTML = `
-                    <tr>
-                        <td class="fw-bold">Dra. Ana Valenzuela</td>
-                        <td>Dermatocosmiatra Médica</td>
-                        <td><code>MN-45982</code></td>
-                        <td><span class="badge badge-citas">${citasAna.length} asignadas</span></td>
-                    </tr>
-                    <tr>
-                        <td class="fw-bold">Estet. Lucía Gómez</td>
-                        <td>Terapeuta Corporal y Masoterapeuta</td>
-                        <td><code>RE-12844</code></td>
-                        <td><span class="badge badge-citas">${citasLucia.length} asignadas</span></td>
-                    </tr>
+            // Mayo 2026 arranca un día Viernes (5 celdas vacías al inicio)
+            for(let i=0; i<5; i++) {
+                contenedor.innerHTML += `<div class="calendar-cell empty-cell"></div>`;
+            }
+
+            // Inyectar los 31 días de Mayo
+            for(let dia=1; dia<=31; dia++) {
+                const diaString = dia < 10 ? `0${dia}` : `${dia}`;
+                const fechaIteracion = `2026-05-${diaString}`;
+
+                // Verificar si este día en particular tiene al menos un turno en Neon
+                const tieneCitas = turnosCache.some(t => t.fecha_hora.startsWith(fechaIteracion));
+                const esElSeleccionado = (fechaIteracion === diaSeleccionadoActual);
+
+                let clasesCell = "calendar-cell";
+                if(esElSeleccionado) clasesCell += " active-day";
+
+                contenedor.innerHTML += `
+                    <div class="${clasesCell}" onclick="cambiarDiaFiltroCalendario('${fechaIteracion}')">
+                        ${dia}
+                        ${tieneCitas ? '<div class="dot-indicator"></div>' : ''}
+                    </div>
                 `;
-
-                // Construir los bloques visuales para el Fichero de Clientes
-                const tablaClientes = document.getElementById('tabla-clientes-dinamica');
-                
-                // Agrupamos dinámicamente las citas pertenecientes al Cliente ID: 10
-                const citasCliente10 = turnos.filter(t => t.cliente_id === 10);
-                let htmlCitas10 = '';
-                
-                if(citasCliente10.length === 0) {
-                    htmlCitas10 = '<span class="text-muted small">Sin citas agendadas actualmente.</span>';
-                } else {
-                    citasCliente10.forEach(c => {
-                        const sFound = serviciosCache.find(s => s.id === c.servicio_id);
-                        const sName = sFound ? sFound.nombre : "Tratamiento";
-                        htmlCitas10 += `<div class="sub-cita">🌸 <b>${sName}</b> (${c.fecha_hora})</div>`;
-                    });
-                }
-
-                // Agrupamos dinámicamente las citas pertenecientes al Cliente ID: 11
-                const citasCliente11 = turnos.filter(t => t.cliente_id === 11);
-                let htmlCitas11 = '';
-                
-                if(citasCliente11.length === 0) {
-                    htmlCitas11 = '<span class="text-muted small">Sin citas agendadas actualmente.</span>';
-                } else {
-                    citasCliente11.forEach(c => {
-                        const sFound = serviciosCache.find(s => s.id === c.servicio_id);
-                        const sName = sFound ? sFound.nombre : "Tratamiento";
-                        htmlCitas11 += `<div class="sub-cita">🌸 <b>${sName}</b> (${c.fecha_hora})</div>`;
-                    });
-                }
-
-                // Inyectamos las filas de los clientes con sus respectivos arreglos de citas dinámicas
-                tablaClientes.innerHTML = `
-                    <tr>
-                        <td class="fw-bold">María López (ID: 10)</td>
-                        <td>maria.lopez@gmail.com <br><small class="text-muted">Tel: +54 11 5489-2211</small></td>
-                        <td>${htmlCitas10}</td>
-                    </tr>
-                    <tr>
-                        <td class="fw-bold">Carlos Pérez (ID: 11)</td>
-                        <td>carlos.perez@gmail.com <br><small class="text-muted">Tel: +54 11 6599-3344</small></td>
-                        <td>${htmlCitas11}</td>
-                    </tr>
-                `;
-
-            } catch (error) {
-                console.error("Error al procesar la sincronización de usuarios:", error);
             }
         }
 
-        // Guardado local de servicios
-        function agregarServicioLocal() {
-            const nombre = document.getElementById('nuevo-nombre').value.trim();
-            const duracion = document.getElementById('nuevo-duracion').value.trim();
-            const precio = document.getElementById('nuevo-precio').value.trim();
-            const descripcion = document.getElementById('nuevo-descripcion').value.trim();
+        function cambiarDiaFiltroCalendario(nuevaFecha) {
+            diaSeleccionadoActual = nuevaFecha;
+            renderizarCalendarioVisualMayo2026();
+            filtrarYMostrarCitasPorDia(nuevaFecha);
+        }
 
-            if (!nombre || !duracion || !precio || !descripcion) {
-                alert("Complete todos los campos.");
+        // 🛠️ FUNCIÓN QUE FILTRA Y PINTA LA TABLA DE TURNOS DEL DÍA SELECCIONADO
+        function filtrarYMostrarCitasPorDia(fechaFiltro) {
+            document.getElementById('titulo-filtro-agenda').innerText = `Citas del día: ${fechaFiltro}`;
+            const tbody = document.getElementById('tabla-maestra-turnos');
+            tbody.innerHTML = "";
+
+            const turnosDelDia = turnosCache.filter(t => t.fecha_hora.startsWith(fechaFiltro));
+
+            if(turnosDelDia.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted small py-4">No hay reservas registradas en Neon para este día.</td></tr>`;
                 return;
             }
 
-            const tabla = document.getElementById('tabla-servicios');
-            const nuevoId = serviciosCache.length + 5;
-            
-            const nuevaFila = document.createElement('tr');
-            nuevaFila.id = `fila-${nuevoId}`;
-            nuevaFila.innerHTML = `
-                <td>
-                    <span class="nombre d-block fw-bold">${nombre}</span>
-                    <small class="descripcion text-muted">${descripcion}</small>
-                </td>
-                <td>${duracion} min</td>
-                <td>$${precio}</td>
-                <td class="text-center">
-                    <button class="btn btn-sm btn-link text-danger text-decoration-none" onclick="borrarFila(${nuevoId})">Borrar</button>
-                </td>
-            `;
-            tabla.appendChild(nuevaFila);
-            bootstrap.Modal.getInstance(document.getElementById('modalNuevoServicio')).hide();
+            turnosDelDia.forEach(t => {
+                const profEncontrado = staffFijo.find(p => p.id === t.profesional_id);
+                const nombreEspecialista = profEncontrado ? profEncontrado.nombre : `ID: ${t.profesional_id}`;
+                const serv = serviciosCache.find(s => s.id === t.servicio_id);
+                const horaTurno = t.fecha_hora.split(' ')[1] || '09:00';
+
+                tbody.innerHTML += `
+                    <tr id="turno-maestro-${t.id}">
+                        <td><span class="badge badge-hora">${horaTurno} AM</span></td>
+                        <td>Cliente ID: ${t.cliente_id}</td>
+                        <td><b>${serv ? serv.nombre : 'Tratamiento'}</b></td>
+                        <td><span class="badge badge-pro">${nombreEspecialista}</span></td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-warning rounded-pill px-2 me-1" style="font-size:0.75rem" onclick="abrirModalReprogramar(${t.id}, ${t.profesional_id})">🗓️ Mover</button>
+                            <button class="btn btn-sm btn-outline-danger rounded-pill px-2" style="font-size:0.75rem" onclick="cancelarTurno(${t.id})">❌ Quitar</button>
+                        </td>
+                    </tr>
+                `;
+            });
         }
 
-        function borrarFila(id) {
-            if(confirm("¿Eliminar tratamiento?")) document.getElementById(`fila-${id}`).remove();
-        }
+        // 📥 📊 MOTOR DE EXPORTACIÓN CORREGIDO (RESISTENTE A FORMATOS DE FECHA E IDs)
+        function exportarAgendaFormatoExcel(tipoFiltro) {
+            let turnosAExportar = [];
+            let nombreArchivo = "";
 
-        function eliminarTurnoLocal(id) {
-            if(confirm("¿Deseas suspender administrativamente este turno?")) {
-                document.getElementById(`turno-maestro-${id}`).remove();
+            // Limpiamos la fecha seleccionada en el calendario visual
+            const fechaFiltroLimpia = String(diaSeleccionadoActual).trim();
+
+            if (tipoFiltro === 'dia') {
+                // Filtrado tolerante para el día seleccionado
+                turnosAExportar = turnosCache.filter(t => {
+                    if (!t.fecha_hora) return false;
+                    const fechaTurno = String(t.fecha_hora).trim();
+                    // Retorna verdadero si empieza con la fecha o si la fecha está incluida
+                    return fechaTurno.startsWith(fechaFiltroLimpia) || fechaTurno.includes(fechaFiltroLimpia);
+                });
+                nombreArchivo = `estetica_zen_turnos_dia_${fechaFiltroLimpia}.csv`;
+            } else {
+                // 🚀 ¡FUERZA BRUTA! Si elige todo/mes, se lleva el 100% de lo que Neon devuelva
+                turnosAExportar = [...turnosCache]; 
+                nombreArchivo = `estetica_zen_reporte_completo_neon.csv`;
             }
+
+            // Si la lista sigue en 0, es porque turnosCache realmente está vacío (Neon no devolvió nada)
+            if (turnosAExportar.length === 0) {
+                alert(`Atención: No hay filas de turnos cargadas en la memoria para el criterio: "${tipoFiltro}". Registra un turno desde la web de reservas primero.`);
+                return;
+            }
+
+            // Encabezados de columnas compatibles con Excel Latino (separados por punto y coma ';')
+            let filasCSV = [["ID Cita", "Fecha y Hora Real", "ID Paciente", "Especialista Asignado", "Tratamiento", "Precio Estimado"]];
+
+            // Mapear los datos unificando cachés de servicios y el staff predeterminado
+            turnosAExportar.forEach(t => {
+                // Convertimos a Number de forma segura por si vienen como String desde Postgres
+                const pId = t.profesional_id ? Number(t.profesional_id) : 0;
+                const sId = t.servicio_id ? Number(t.servicio_id) : 0;
+
+                const prof = staffFijo.find(p => Number(p.id) === pId);
+                const serv = serviciosCache.find(s => Number(s.id) === sId);
+                
+                // Limpieza de caracteres de control para no romper el layout del CSV
+                const idCita = `#${t.id || 'N/A'}`;
+                const fechaHora = String(t.fecha_hora || 'Sin Fecha').replace(/;/g, ' ');
+                const idCliente = `Cliente ID: ${t.cliente_id || 'Anónimo'}`;
+                
+                // Resolución del Especialista Asignado
+                let nombreEspecialista = `ID Profesional: ${pId}`;
+                if (prof) {
+                    nombreEspecialista = prof.nombre;
+                } else if (pId === 1) {
+                    nombreEspecialista = "Dra. Ana Valenzuela";
+                } else if (pId === 2) {
+                    nombreEspecialista = "Estet. Lucía Gómez";
+                }
+
+                // Resolución del Tratamiento y Precio
+                const nombreTratamiento = serv ? serv.nombre.replace(/;/g, ',') : `Tratamiento (ID: ${sId})`;
+                const precioTratamiento = serv ? `$${serv.precio}` : "$3500"; // Precio estimado de respaldo
+
+                // Insertamos la fila estructurada
+                filasCSV.push([idCita, fechaHora, idCliente, nombreEspecialista, nombreTratamiento, precioTratamiento]);
+            });
+
+            // Generar la codificación binaria con la firma UTF-8 (\uFEFF) para que Excel reconozca eñes y acentos
+            let contenidoCSV = "data:text/csv;charset=utf-8,\uFEFF" + filasCSV.map(e => e.join(";")).join("\n");
+            let encodedUri = encodeURI(contenidoCSV);
+            
+            let linkDescarga = document.createElement("a");
+            linkDescarga.setAttribute("href", encodedUri);
+            linkDescarga.setAttribute("download", nombreArchivo);
+            document.body.appendChild(linkDescarga);
+            
+            linkDescarga.click(); // Gatillar la descarga automática
+            document.body.removeChild(linkDescarga);
+        }
+
+        function abrirModalReprogramar(idTurno, idProfesional) {
+            document.getElementById('reprog-turno-id').value = idTurno;
+            document.getElementById('reprog-profesional-id').value = idProfesional;
+            document.getElementById('reprog-fecha').value = diaSeleccionadoActual;
+            new bootstrap.Modal(document.getElementById('modalReprogramar')).show();
+        }
+
+        async function confirmarReprogramacionBackend() {
+            const idTurno = document.getElementById('reprog-turno-id').value;
+            const idProfesional = document.getElementById('reprog-profesional-id').value;
+            const fechaInput = document.getElementById('reprog-fecha').value;
+            const horaInput = document.getElementById('reprog-hora').value;
+
+            if(!fechaInput || !horaInput) { alert("Completa los datos."); return; }
+
+            const nuevaFechaHoraString = `${fechaInput} ${horaInput}`;
+
+            const res = await fetch(`${window.location.origin}/api/turnos/${idTurno}/reprogramar`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fecha_hora: nuevaFechaHoraString, profesional_id: idProfesional })
+            });
+
+            const resultado = await res.json();
+            if(res.ok) {
+                alert("🎉 Agenda unificada. Cita reprogramada.");
+                bootstrap.Modal.getInstance(document.getElementById('modalReprogramar')).hide();
+                await cargarTodo();
+            } else {
+                alert(`❌ Conflicto: ${resultado.error}`);
+            }
+        }
+
+        function abrirModalEditarPersonal(id) {
+            const p = staffFijo.find(prof => prof.id === id);
+            document.getElementById('edit-pro-id').value = p.id;
+            document.getElementById('edit-pro-nombre').value = p.nombre;
+            document.getElementById('edit-pro-rol').value = p.rol;
+            new bootstrap.Modal(document.getElementById('modalEditarPersonal')).show();
+        }
+
+        function confirmarEdicionPersonalLocal() {
+            const id = parseInt(document.getElementById('edit-pro-id').value);
+            const nuevoNombre = document.getElementById('edit-pro-nombre').value.trim();
+            const nuevoRol = document.getElementById('edit-pro-rol').value.trim();
+
+            const index = staffFijo.findIndex(p => p.id === id);
+            if(index !== -1) {
+                staffFijo[index].nombre = nuevoNombre;
+                staffFijo[index].rol = nuevoRol;
+            }
+            bootstrap.Modal.getInstance(document.getElementById('modalEditarPersonal')).hide();
+            cargarTodo();
+        }
+
+        function abrirModalCrear() {
+            document.getElementById('modalTitulo').innerText = "✨ Nuevo Servicio";
+            document.getElementById('servicio-id-edicion').value = "";
+            document.getElementById('form-nombre').value = "";
+            document.getElementById('form-duracion').value = "";
+            document.getElementById('form-precio').value = "";
+            document.getElementById('form-descripcion').value = "";
+            new bootstrap.Modal(document.getElementById('modalServicio')).show();
+        }
+
+        function abrirModalEditar(id) {
+            const s = serviciosCache.find(ser => ser.id === id);
+            document.getElementById('modalTitulo').innerText = "✏️ Editar Servicio";
+            document.getElementById('servicio-id-edicion').value = s.id;
+            document.getElementById('form-nombre').value = s.nombre;
+            document.getElementById('form-duracion').value = s.duracion;
+            document.getElementById('form-precio').value = s.precio;
+            document.getElementById('form-descripcion').value = s.descripcion;
+            new bootstrap.Modal(document.getElementById('modalServicio')).show();
+        }
+
+        async function procesarGuardadoServicio() {
+            const id = document.getElementById('servicio-id-edicion').value;
+            const payload = {
+                nombre: document.getElementById('form-nombre').value,
+                duracion: parseInt(document.getElementById('form-duracion').value),
+                precio: parseFloat(document.getElementById('form-precio').value),
+                descripcion: document.getElementById('form-descripcion').value
+            };
+
+            let url = `${window.location.origin}/api/servicios`;
+            let metodo = 'POST';
+            if(id) { url += `/${id}`; metodo = 'PUT'; }
+
+            const res = await fetch(url, {
+                method: metodo,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if(res.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('modalServicio')).hide();
+                await cargarTodo();
+            } else { alert("Error al guardar."); }
+        }
+
+        async function eliminarServicio(id) {
+            if(confirm("¿Seguro de eliminar este servicio?")) {
+                await fetch(`${window.location.origin}/api/servicios/${id}`, { method: 'DELETE' });
+                await cargarTodo();
+            }
+        }
+
+        async function cancelarTurno(id) {
+            if(confirm("¿Seguro de cancelar esta cita?")) {
+                await fetch(`${window.location.origin}/api/turnos/${id}`, { method: 'DELETE' });
+                await cargarTodo();
+            }
+        }
+
+        async function eliminarClienteReal(id, idFila) {
+            if(confirm("¿Deseas eliminar este usuario?")) {
+                const res = await fetch(`${window.location.origin}/api/usuarios/${id}`, { method: 'DELETE' });
+                if(res.ok) { document.getElementById(idFila).remove(); }
+            }
+        }
+
+        function bloquearUsuario(nombre, idFila) {
+            document.getElementById(idFila).style.backgroundColor = "#e0e0e0";
+            document.getElementById(idFila).style.opacity = "0.5";
+            alert(`⛔ Usuario ${nombre} Suspendido.`);
+        }
+
+        function cerrarSesionAdmin() {
+            localStorage.removeItem('emailUsuarioLogueado');
+            window.location.href = 'login.html';
         }
     </script>
 </body>

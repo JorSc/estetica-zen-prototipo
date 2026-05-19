@@ -4,9 +4,10 @@
     "description": "Prototipo de Estética Zen",
     "main": "server.js",
     "scripts": {
-      "start": "node server.js"
+        "start": "node server.js"
     },
     "dependencies": {
-      "express": "^4.19.2"
+        "@neondatabase/serverless": "^1.1.0",
+        "express": "^4.19.2"
     }
-  }
+}

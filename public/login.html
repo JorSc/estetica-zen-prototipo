@@ -66,11 +66,11 @@
 
             <div class="mb-3 text-start">
                 <label class="form-label small fw-bold">Email</label>
-                <input type="email" id="email" class="form-control rounded-pill" placeholder="ejemplo@correo.com" value="maria.lopez@gmail.com">
+                <input type="email" id="email" class="form-control rounded-pill" placeholder="ejemplo@correo.com">
             </div>
             <div class="mb-4 text-start">
                 <label class="form-label small fw-bold">Contraseña</label>
-                <input type="password" id="password" class="form-control rounded-pill" placeholder="••••••••" value="123456">
+                <input type="password" id="password" class="form-control rounded-pill" placeholder="••••••••">
             </div>
             
             <button class="btn btn-login w-100 py-2 mb-3 shadow-sm" onclick="simularLogin()">INGRESAR</button>
@@ -135,6 +135,9 @@
             const email = document.getElementById('email').value.trim();
             if(!email) { alert("Por favor ingresa un correo electrónico."); return; }
 
+            // 💾 GUARDAR EL EMAIL EN LA MEMORIA DEL NAVEGADOR
+            localStorage.setItem('emailUsuarioLogueado', email);
+
             if(email === 'admin@zen.com') {
                 lanzarToast("🔓 ¡Acceso concedido como Administrador! Redirigiendo...");
                 setTimeout(() => { window.location.href = 'admin.html'; }, 1100);
@@ -147,7 +150,11 @@
             }
         }
 
-        function procesarRegistro() {
+// Aprovechamos y modificamos también el final de procesarRegistro() para que guarde el email al registrarse:
+// Asegúrate de que la línea dentro del IF de tu procesarRegistro guarde el localStorage así:
+// localStorage.setItem('emailUsuarioLogueado', email);
+
+        async function procesarRegistro() {
             const nombre = document.getElementById('reg-nombre').value.trim();
             const email = document.getElementById('reg-email').value.trim();
             
@@ -156,14 +163,23 @@
                 return;
             }
 
-            // Ocultar modal de registro
-            bootstrap.Modal.getInstance(document.getElementById('modalRegistro')).hide();
-            
-            // Lanzar aviso de éxito y redirigir
-            lanzarToast(`🎉 ¡Cuenta creada con éxito! Bienvenido/a ${nombre}. Redirigiendo a turnos...`);
-            setTimeout(() => {
-                window.location.href = 'reserva.html';
-            }, 1500);
+            try {
+                const respuesta = await fetch(`${window.location.origin}/api/usuarios`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre: nombre, email: email, rol: 'cliente' })
+                });
+
+                if(respuesta.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('modalRegistro')).hide();
+                    lanzarToast(`🎉 ¡Cuenta registrada en Neon Cloud! Bienvenido/a ${nombre}. Redirigiendo...`);
+                    setTimeout(() => { window.location.href = 'reserva.html'; }, 1500);
+                } else {
+                    alert("Hubo un problema al procesar el registro en la base de datos.");
+                }
+            } catch (err) {
+                alert("Error de conexión con el servidor.");
+            }
         }
     </script>
 </body>
