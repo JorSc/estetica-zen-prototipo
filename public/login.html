@@ -56,13 +56,6 @@
         <div class="card-body">
             <h3 class="mb-2" style="color: #f06292; font-weight: bold;">🌸 Estética Zen</h3>
             <p class="text-muted small mb-4">Ingresa para gestionar tus turnos</p>
-            
-            <div class="alert alert-info small text-start p-2 mb-3" style="font-size: 0.73rem; border-color: #bfe5f3; background-color: #e3f2fd;">
-                <strong>💡 Tip para la Evaluación (HU#1):</strong><br>
-                • <code>admin@zen.com</code> $\rightarrow$ Vista Administrador.<br>
-                • <code>pro@zen.com</code> $\rightarrow$ Vista Agenda Profesional.<br>
-                • Cualquier otro correo ingresará como Cliente.
-            </div>
 
             <div class="mb-3 text-start">
                 <label class="form-label small fw-bold">Email</label>
@@ -135,7 +128,6 @@
             const email = document.getElementById('email').value.trim();
             if(!email) { alert("Por favor ingresa un correo electrónico."); return; }
 
-            // 💾 GUARDAR EL EMAIL EN LA MEMORIA DEL NAVEGADOR
             localStorage.setItem('emailUsuarioLogueado', email);
 
             if(email === 'admin@zen.com') {
@@ -149,10 +141,6 @@
                 setTimeout(() => { window.location.href = 'reserva.html'; }, 1100);
             }
         }
-
-// Aprovechamos y modificamos también el final de procesarRegistro() para que guarde el email al registrarse:
-// Asegúrate de que la línea dentro del IF de tu procesarRegistro guarde el localStorage así:
-// localStorage.setItem('emailUsuarioLogueado', email);
 
         async function procesarRegistro() {
             const nombre = document.getElementById('reg-nombre').value.trim();
@@ -171,8 +159,9 @@
                 });
 
                 if(respuesta.ok) {
+                    localStorage.setItem('emailUsuarioLogueado', email);
                     bootstrap.Modal.getInstance(document.getElementById('modalRegistro')).hide();
-                    lanzarToast(`🎉 ¡Cuenta registrada en Neon Cloud! Bienvenido/a ${nombre}. Redirigiendo...`);
+                    lanzarToast(`🎉 ¡Cuenta registrada con éxito! Redirigiendo...`);
                     setTimeout(() => { window.location.href = 'reserva.html'; }, 1500);
                 } else {
                     alert("Hubo un problema al procesar el registro en la base de datos.");
