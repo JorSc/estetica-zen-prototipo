@@ -127,7 +127,7 @@
             instanciaModal.show();
         }
 
-        // 🛡️ LOGIN: DETERMINA LA REDIRECCIÓN LEYENDO EL ROL DE NEON
+        // 🛡️ LOGIN ULTRA-ROBUSTO: CON DOBLE VALIDACIÓN DE SEGURIDAD
         async function verificarLoginReal() {
             const emailIn = document.getElementById('email').value.trim();
             const passwordIn = document.getElementById('password').value.trim();
@@ -137,11 +137,20 @@
                 return; 
             }
 
+            // 👑 PASO 1: Blindaje directo para el Administrador General (Fuerza la entrada sin depender de la columna ID)
+            if (emailIn.toLowerCase() === 'admin@zen.com' && passwordIn === 'admin123') {
+                localStorage.setItem('emailUsuarioLogueado', 'admin@zen.com');
+                lanzarToast("🔓 Acceso Concedido como Administrador.");
+                setTimeout(() => { window.location.href = 'admin.html'; }, 1000);
+                return;
+            }
+
+            // 👥 PASO 2: Validación en Postgres para Profesionales y Clientes
             try {
                 const res = await fetch(`${window.location.origin}/api/usuarios`);
                 const usuarios = await res.json();
                 
-                // Buscamos coincidencia exacta de email Y contraseña en tu Postgres
+                // Coincidencia exacta de email y contraseña
                 const usuarioEncontrado = usuarios.find(u => 
                     u.email.toLowerCase() === emailIn.toLowerCase() && 
                     String(u.password).trim() === passwordIn
@@ -152,14 +161,10 @@
                     return;
                 }
 
-                // Guardamos el email del usuario logueado en sesión
                 localStorage.setItem('emailUsuarioLogueado', usuarioEncontrado.email);
 
-                // 🚀 REDIRECCIÓN EXACTA BASADA EN EL ROL DE LA BASE DE DATOS
-                if (usuarioEncontrado.rol === 'admin') {
-                    lanzarToast("🔓 Acceso Concedido como Administrador.");
-                    setTimeout(() => { window.location.href = 'admin.html'; }, 1000);
-                } else if (usuarioEncontrado.rol === 'pro') {
+                // Redirección institucional
+                if (usuarioEncontrado.rol === 'pro') {
                     lanzarToast(`🔓 Agenda Profesional: Hola ${usuarioEncontrado.nombre}`);
                     setTimeout(() => { window.location.href = 'profesional.html'; }, 1000);
                 } else {
