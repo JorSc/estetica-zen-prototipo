@@ -37,7 +37,7 @@ async function inicializarEstructuraBaseDatos() {
             );
         `;
 
-        // 3. 🔗 NUEVA TABLA INTERMEDIA: Relación Muchos a Muchos (Especialidades reales)
+        // 3. 🔗 TABLA INTERMEDIA: Relación Muchos a Muchos (Especialidades reales)
         await sql`
             CREATE TABLE IF NOT EXISTS profesionales_servicios (
                 profesional_id INT NOT NULL,
@@ -92,7 +92,7 @@ app.post('/api/usuarios', async (req, res) => {
         
         const proId = resultado[0].id;
 
-        // 2. Si es profesional y mandó tratamientos asociados, guardamos las relaciones
+        // 2. Si es profesional y mandó tratamientos asociados, guardamos las relaciones Muchos a Muchos
         if (rSeguro === 'pro' && serviciosAsignados && serviciosAsignados.length > 0) {
             // Limpiamos asignaciones viejas por si es una edición
             await sql`DELETE FROM profesionales_servicios WHERE profesional_id = ${proId}`;
@@ -119,7 +119,7 @@ app.delete('/api/usuarios/:id', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ENDPOINT CLAVE: Obtiene los profesionales asignados a un servicio específico
+// Obtiene los profesionales asignados a un servicio específico (Filtro del cliente)
 app.get('/api/servicios/:id/profesionales', async (req, res) => {
     try {
         const pros = await sql`
@@ -132,10 +132,19 @@ app.get('/api/servicios/:id/profesionales', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// SERVICIOS
+// SERVICIOS (Con Join Relacional y STRING_AGG para mostrar en la grilla del Admin)
 app.get('/api/servicios', async (req, res) => {
     try {
-        const filas = await sql`SELECT * FROM servicios ORDER BY id ASC`;
+        const filas = await sql`
+            SELECT 
+                s.id, s.nombre, s.duracion, s.precio, s.descripcion,
+                COALESCE(STRING_AGG(u.nombre, ' | '), 'Sin asignar') AS profesionales_asignados
+            FROM servicios s
+            LEFT JOIN profesionales_servicios ps ON s.id = ps.servicio_id
+            LEFT JOIN usuarios u ON ps.profesional_id = u.id
+            GROUP BY s.id, s.nombre, s.duracion, s.precio, s.descripcion
+            ORDER BY s.id ASC
+        `;
         res.status(200).json(filas);
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -173,7 +182,7 @@ app.delete('/api/servicios/:id', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// TURNOS
+// TURNOS (Auditoría cruzada para Admin y Profesionales)
 app.get('/api/turnos/detallado', async (req, res) => {
     try {
         const filas = await sql`
