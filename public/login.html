@@ -109,18 +109,17 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // TRUCO DE CARGA SEGURA: Fuerza el vaciado absoluto tras el renderizado del navegador
+        // Asegurar campos completamente vacíos al cargar, burlando las extensiones de contraseñas
         window.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 const inputEmail = document.getElementById('email');
                 const inputPass = document.getElementById('password');
-                
                 if (inputEmail) inputEmail.value = '';
                 if (inputPass) {
                     inputPass.value = '';
-                    inputPass.removeAttribute('readonly'); 
+                    inputPass.type = 'text'; // Fuerza el renderizado transparente inicial
                 }
-            }, 120); 
+            }, 50);
         });
 
         function lanzarToast(mensaje) {
