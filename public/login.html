@@ -63,7 +63,8 @@
             </div>
             <div class="mb-4 text-start">
                 <label class="form-label small fw-bold">Contraseña</label>
-                <input type="password" id="password" class="form-control rounded-pill" placeholder="••••••••" autocomplete="new-password">
+                <!-- Ponemos el campo como "readonly" (solo lectura) para que el navegador no le inyecte los asteriscos -->
+                <input type="password" id="password" class="form-control rounded-pill" placeholder="••••••••" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');">
             </div>
             
             <button class="btn btn-login w-100 py-2 mb-3 shadow-sm" onclick="simularLogin()">INGRESAR</button>
@@ -123,6 +124,19 @@
             aviso.innerText = mensaje;
             document.body.appendChild(aviso);
         }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const inputEmail = document.getElementById('email');
+                const inputPass = document.getElementById('password');
+        
+                if (inputEmail) inputEmail.value = '';
+                if (inputPass) {
+                    inputPass.value = '';
+                    inputPass.removeAttribute('readonly'); // Habilita el campo para que el usuario pueda escribir
+                }
+            }, 100); // Espera 100 milisegundos para burlar el autocompletado del navegador
+        });
 
         function simularLogin() {
             const email = document.getElementById('email').value.trim();
