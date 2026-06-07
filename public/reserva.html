@@ -92,10 +92,18 @@
             try {
                 const resUser = await fetch(`${window.location.origin}/api/usuarios`);
                 const listaUsuarios = await resUser.json();
-                const miUsuario = listaUsuarios.find(u => u.email === emailLogueado);
-                if(miUsuario) clienteIdDetectado = miUsuario.id;
+                
+                // Macheo estricto insensible a mayúsculas
+                const miUsuario = listaUsuarios.find(u => u.email.toLowerCase() === emailLogueado.toLowerCase());
+                if(miUsuario) {
+                    clienteIdDetectado = miUsuario.id;
+                } else {
+                    alert("No se pudo detectar el ID de usuario en Postgres. Reingresa.");
+                    window.location.href = 'login.html';
+                    return;
+                }
 
-                // 🚀 CARGA DE PROFESIONALES REALES DESDE NEON
+                // Carga de Profesionales
                 const selectPro = document.getElementById('select-profesional');
                 selectPro.innerHTML = '';
                 const profesionalesReales = listaUsuarios.filter(u => u.role === 'pro' || u.rol === 'pro');
@@ -108,6 +116,7 @@
                     });
                 }
 
+                // Carga de Servicios con su Descripción Real incorporada
                 const resServ = await fetch(`${window.location.origin}/api/servicios`);
                 serviciosCache = await resServ.json();
                 const contenedor = document.getElementById('contenedor-servicios');
@@ -115,8 +124,9 @@
                 serviciosCache.forEach(s => {
                     contenedor.innerHTML += `
                         <div class="card mb-3 card-service shadow-sm p-3" id="servicio-${s.id}" onclick="seleccionarServicio(${s.id})">
-                            <h6 class="mb-1 fw-bold">${s.nombre}</h6>
-                            <p class="text-muted small mb-0">⏱️ ${s.duracion} min | $${s.precio}</p>
+                            <h6 class="mb-1 fw-bold" style="color: var(--rosa-f);">${s.nombre}</h6>
+                            <p class="text-muted small mb-2">${s.descripcion || 'Sin descripción disponible.'}</p>
+                            <p class="fw-bold small mb-0 text-secondary">⏱️ ${s.duracion} min | $${s.precio}</p>
                         </div>
                     `;
                 });
@@ -176,23 +186,33 @@
         async function enviarReservaReal() {
             const proId = parseInt(document.getElementById('select-profesional').value);
             const fecha = document.getElementById('input-fecha').value;
-            if(!servicioSeleccionadoId || !horaSeleccionada || proId === 0) { alert("Completa la selección."); return; }
+            
+            // Validación previa explícita
+            if(!servicioSeleccionadoId) { alert("Por favor, selecciona un tratamiento de la lista."); return; }
+            if(!horaSeleccionada) { alert("Por favor, selecciona un horario disponible para tu cita."); return; }
+            if(proId === 0 || isNaN(proId)) { alert("No se ha seleccionado un especialista válido."); return; }
 
             const payload = {
-                cliente_id: clienteIdDetectado || 1,
+                cliente_id: clienteIdDetectado,
                 profesional_id: proId,
                 servicio_id: servicioSeleccionadoId,
                 fecha_hora: `${fecha} ${horaSeleccionada}`
             };
 
-            const res = await fetch(`${window.location.origin}/api/turnos/reserva`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+            try {
+                const res = await fetch(`${window.location.origin}/api/turnos/reserva`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
 
-            if(res.ok) { alert("🎉 Turno guardado de forma real en Postgres."); await actualizarCacheTurnos(); }
-            else { alert("Error al reservar."); }
+                if(res.ok) { 
+                    alert("🎉 ¡Excelente! Tu turno fue guardado de forma real en Postgres."); 
+                    await actualizarCacheTurnos(); 
+                } else { 
+                    alert("Error en el servidor al intentar registrar la reserva."); 
+                }
+            } catch (err) { alert("Error de red al intentar conectar con Postgres."); }
         }
 
         async function cargarMisTurnosModal() {
