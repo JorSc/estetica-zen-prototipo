@@ -15,7 +15,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ⚙️ INICIALIZACIÓN MÁGICA: Corrige las tablas reales en Neon Cloud con contraseñas
 async function inicializarEstructuraBaseDatos() {
     try {
-        // 1. Tabla de Servicios (Imprescindible serial id y campos limpios)
+        // 1. Tabla de Servicios
         await sql`
             CREATE TABLE IF NOT EXISTS servicios (
                 id SERIAL PRIMARY KEY,
@@ -26,7 +26,7 @@ async function inicializarEstructuraBaseDatos() {
             );
         `;
         
-        // 2. Tabla de Usuarios (¡Columna password incorporada con éxito! 🔑)
+        // 2. Tabla de Usuarios
         await sql`
             CREATE TABLE IF NOT EXISTS usuarios (
                 id SERIAL PRIMARY KEY,
@@ -37,7 +37,7 @@ async function inicializarEstructuraBaseDatos() {
             );
         `;
 
-        // 3. Tabla de Turnos (Formatos compatibles nativos)
+        // 3. Tabla de Turnos
         await sql`
             CREATE TABLE IF NOT EXISTS turnos (
                 id SERIAL PRIMARY KEY,
@@ -68,7 +68,6 @@ app.get('/api/usuarios', async (req, res) => {
 });
 
 app.post('/api/usuarios', async (req, res) => {
-    // 🔑 Captura la clave real enviada desde el Front o asigna una genérica segura
     const { nombre, email, password, rol } = req.body;
     try {
         const rSeguro = rol || 'cliente';
@@ -140,6 +139,29 @@ app.get('/api/turnos/maestro', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// 🔥 NUEVO ENDPOINT DE AUDITORÍA AVANZADA PARA EL ADMIN (Cruza nombres directo en base de datos)
+app.get('/api/turnos/detallado', async (req, res) => {
+    try {
+        const filas = await sql`
+            SELECT 
+                t.id, 
+                t.fecha_hora,
+                t.cliente_id,
+                t.profesional_id,
+                t.servicio_id,
+                u1.nombre as cliente_nombre,
+                u2.nombre as profesional_nombre,
+                s.nombre as servicio_nombre
+            FROM turnos t
+            LEFT JOIN usuarios u1 ON t.cliente_id = u1.id
+            LEFT JOIN usuarios u2 ON t.profesional_id = u2.id
+            LEFT JOIN servicios s ON t.servicio_id = s.id
+            ORDER BY t.fecha_hora ASC
+        `;
+        res.status(200).json(filas);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/turnos/reserva', async (req, res) => {
     const { cliente_id, profesional_id, servicio_id, fecha_hora } = req.body;
     try {
@@ -158,21 +180,6 @@ app.delete('/api/turnos/:id', async (req, res) => {
     try {
         await sql`DELETE FROM turnos WHERE id = ${parseInt(req.params.id)}`;
         res.status(200).json({ mensaje: "Cancelado." });
-    } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.put('/api/turnos/:id/reprogramar', async (req, res) => {
-    const { fecha_hora, profesional_id } = req.body;
-    try {
-        const colisiones = await sql`
-            SELECT id FROM turnos 
-            WHERE profesional_id = ${parseInt(profesional_id)} AND fecha_hora = ${fecha_hora} AND id != ${parseInt(req.params.id)}
-        `;
-        if (colisiones.length > 0) {
-            return res.status(409).json({ error: "El especialista ya cuenta con una cita asignada en ese bloque." });
-        }
-        await sql`UPDATE turnos SET fecha_hora = ${fecha_hora} WHERE id = ${parseInt(req.params.id)}`;
-        res.status(200).json({ mensaje: "Reprogramado." });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
