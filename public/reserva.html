@@ -6,83 +6,19 @@
     <title>Reservar Cita - Estética Zen</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        :root { 
-            --rosa-p: #fce4ec; 
-            --rosa-f: #f06292; 
-            --rosa-h: #f8bbd0; 
-            --texto-oscuro: #4f4f4f;
-        }
-        body { 
-            background-color: #fff9fb; 
-            color: var(--texto-oscuro); 
-            font-family: 'Segoe UI', sans-serif; 
-        }
-        .navbar { 
-            background-color: white; 
-            border-bottom: 2px solid var(--rosa-p); 
-        }
-        .card-service { 
-            border: 1px solid var(--rosa-h); 
-            transition: 0.3s; 
-            cursor: pointer; 
-            border-radius: 15px; 
-        }
-        .card-service:hover { 
-            background-color: var(--rosa-p); 
-            transform: translateY(-3px); 
-        }
-        .card-service.selected {
-            border: 2px solid var(--rosa-f);
-            background-color: var(--rosa-p);
-        }
-        .box-descripcion {
-            background-color: #fff;
-            border-left: 4px solid var(--rosa-f);
-            border-radius: 15px;
-            display: none; 
-            animation: fadeIn 0.4s ease forwards;
-        }
-        .time-slot { 
-            border: 1px solid var(--rosa-h); 
-            padding: 10px; 
-            border-radius: 20px; 
-            text-align: center; 
-            margin-bottom: 10px; 
-            background: white; 
-            transition: 0.2s; 
-            cursor: pointer; 
-        }
-        .time-slot:hover:not(.occupied) { 
-            background-color: var(--rosa-f); 
-            color: white; 
-        }
-        .time-slot.occupied { 
-            background-color: #f1f1f1; 
-            color: #ccc; 
-            cursor: not-allowed; 
-            border-color: #eee; 
-        }
-        .time-slot.selected-slot {
-            background-color: var(--rosa-f) !important;
-            color: white !important;
-        }
-        .btn-confirmar { 
-            background-color: var(--rosa-f); 
-            color: white; 
-            border-radius: 25px; 
-            font-weight: bold; 
-        }
-        .btn-confirmar:hover {
-            background-color: #ec407a;
-            color: white;
-        }
-        .modal-content { border-radius: 25px; border: none; }
-        .modal-header { background-color: var(--rosa-p); border-bottom: 2px solid var(--rosa-h); }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        :root { --rosa-p: #fce4ec; --rosa-f: #f06292; --rosa-h: #f8bbd0; --texto-oscuro: #4f4f4f;}
+        body { background-color: #fff9fb; color: var(--texto-oscuro); font-family: 'Segoe UI', sans-serif; }
+        .navbar { background-color: white; border-bottom: 2px solid var(--rosa-p); }
+        .card-service { border: 1px solid var(--rosa-h); transition: 0.3s; cursor: pointer; border-radius: 15px; background: white; }
+        .card-service.selected { border: 2px solid var(--rosa-f); background-color: var(--rosa-p); }
+        .time-slot { border: 1px solid var(--rosa-h); padding: 10px; border-radius: 20px; text-align: center; margin-bottom: 10px; background: white; cursor: pointer; transition: 0.2s; }
+        .time-slot:hover:not(.occupied) { background-color: var(--rosa-f); color: white; }
+        .time-slot.occupied { background-color: #f1f1f1; color: #ccc; cursor: not-allowed; border-color: #eee; }
+        .time-slot.selected-slot { background-color: var(--rosa-f) !important; color: white !important; }
+        .btn-confirmar { background-color: var(--rosa-f); color: white; border-radius: 25px; font-weight: bold; border: none; }
+        .btn-confirmar:hover { background-color: #ec407a; }
+        .modal-content { border-radius: 25px; }
+        .modal-header { background-color: var(--rosa-p); }
     </style>
 </head>
 <body>
@@ -94,174 +30,134 @@
                 <span class="navbar-brand h1 mb-0" style="color: var(--rosa-f);">🌸 ESTÉTICA ZEN</span>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <span class="text-muted small me-2 fw-bold" id="display-usuario-email">Cargando sesión...</span>
+                <span class="text-muted small me-2 fw-bold" id="display-usuario-email">Cargando...</span>
                 <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalMisTurnos" onclick="cargarMisTurnosModal()">📋 Mis Turnos</button>
-                <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="cerrarSesionEfectivo()">Cerrar Sesión</button>
+                <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="cerrarSesion()">Cerrar Sesión</button>
             </div>
         </div>
     </nav>
 
     <div class="container">
         <div class="row g-4">
-            
             <div class="col-md-5">
                 <h5 class="mb-4 fw-bold">1. Elige tu tratamiento</h5>
-                <div id="contenedor-servicios">
-                    <div class="text-muted small">Cargando tratamientos desde el servidor...</div>
-                </div>
-                
-                <div id="info-descripcion" class="box-descripcion p-3 shadow-sm mt-3">
-                    <h6 class="fw-bold mb-1" style="color: var(--rosa-f);">✨ Detalle del Servicio:</h6>
-                    <p id="txt-descripcion" class="small text-muted mb-0" style="line-height: 1.4;"></p>
-                </div>
+                <div id="contenedor-servicios"></div>
             </div>
             
             <div class="col-md-7">
                 <h5 class="mb-4 fw-bold">2. Agenda tu cita</h5>
                 <div class="card p-4 shadow-sm border-0 rounded-4">
-                    
                     <div class="row mb-4">
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold">Profesional Asignado</label>
-                            <select class="form-select rounded-pill" id="select-profesional" onchange="verificarDisponibilidadHoraria()">
-                                <option value="1">Dra. Ana Valenzuela (Cosmiatra)</option>
-                                <option value="2">Estet. Lucía Gómez (Masoterapeuta)</option>
-                            </select>
+                            <label class="form-label small fw-bold">Profesional Técnico Real</label>
+                            <select class="form-select rounded-pill" id="select-profesional" onchange="verificarDisponibilidadHoraria()"></select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">Fecha</label>
                             <input type="date" class="form-control rounded-pill" id="input-fecha" onchange="verificarDisponibilidadHoraria()">
                         </div>
                     </div>
-                    
-                    <div class="row text-center">
-                        <p class="small fw-bold text-start" id="titulo-estado-horarios">Horarios Disponibles para la Fecha Seleccionada:</p>
-                        <div class="row g-2 justify-content-center" id="contenedor-horarios"></div>
-                    </div>
-                    
-                    <button class="btn btn-confirmar w-100 mt-4 p-3 shadow" onclick="enviarReserva()">RESERVAR AHORA</button>
+                    <p class="small fw-bold" id="titulo-estado-horarios">Horarios Disponibles:</p>
+                    <div class="row g-2 justify-content-center" id="contenedor-horarios"></div>
+                    <button class="btn btn-confirmar w-100 mt-4 p-3 shadow" onclick="enviarReservaReal()">RESERVAR AHORA</button>
                 </div>
             </div>
-
         </div>
     </div>
 
     <div class="modal fade" id="modalMisTurnos" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content shadow-lg">
-                <div class="modal-header">
-                    <h5 class="modal-title" style="color: var(--rosa-f); font-weight: bold;">📋 Mis Turnos Agendados</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <p class="text-muted small mb-3">Turnos vigentes almacenados en la nube para tu cuenta.</p>
-                    <div id="lista-mis-turnos">
-                        <div class="text-muted text-center small py-2">Consultando registros...</div>
-                    </div>
-                </div>
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title fw-bold">📋 Tus Turnos Agendados</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body p-4" id="lista-mis-turnos"></div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
         let servicioSeleccionadoId = null;
         let horaSeleccionada = null;
         let serviciosCache = []; 
         let turnosExistentesCache = [];
-        let clienteIdDetectado = null; 
+        let clienteIdDetectado = null;
 
-        const hoy = new Date().toISOString().split('T')[0];
-        document.getElementById('input-fecha').value = hoy;
+        document.getElementById('input-fecha').value = new Date().toISOString().split('T')[0];
 
         document.addEventListener("DOMContentLoaded", async () => {
             const emailLogueado = localStorage.getItem('emailUsuarioLogueado');
-            if(!emailLogueado) {
-                alert("⚠️ Acceso denegado: Por favor inicia sesión primero.");
-                window.location.href = 'login.html';
-                return;
-            }
+            if(!emailLogueado) { window.location.href = 'login.html'; return; }
             document.getElementById('display-usuario-email').innerText = `👤 ${emailLogueado}`;
 
             try {
                 const resUser = await fetch(`${window.location.origin}/api/usuarios`);
                 const listaUsuarios = await resUser.json();
                 const miUsuario = listaUsuarios.find(u => u.email === emailLogueado);
+                if(miUsuario) clienteIdDetectado = miUsuario.id;
+
+                // 🚀 CARGA DE PROFESIONALES REALES DESDE NEON
+                const selectPro = document.getElementById('select-profesional');
+                selectPro.innerHTML = '';
+                const profesionalesReales = listaUsuarios.filter(u => u.role === 'pro' || u.rol === 'pro');
                 
-                if(miUsuario) {
-                    clienteIdDetectado = miUsuario.id;
+                if(profesionalesReales.length === 0) {
+                    selectPro.innerHTML = `<option value="0">No hay especialistas en la BD</option>`;
                 } else {
-                    clienteIdDetectado = 10; 
+                    profesionalesReales.forEach(p => {
+                        selectPro.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
+                    });
                 }
 
-                const urlServicios = `${window.location.origin}/api/servicios`;
-                const respuesta = await fetch(urlServicios);
-                serviciosCache = await respuesta.json(); 
-                
+                const resServ = await fetch(`${window.location.origin}/api/servicios`);
+                serviciosCache = await resServ.json();
                 const contenedor = document.getElementById('contenedor-servicios');
                 contenedor.innerHTML = '';
-                
-                serviciosCache.forEach(servicio => {
+                serviciosCache.forEach(s => {
                     contenedor.innerHTML += `
-                        <div class="card mb-3 card-service shadow-sm" id="servicio-${servicio.id}" onclick="seleccionarServicio(${servicio.id})">
-                            <div class="card-body">
-                                <h6 class="mb-1 fw-bold">${servicio.nombre}</h6>
-                                <p class="text-muted small mb-0">✨ ${servicio.duracion} min | $${servicio.precio}</p>
-                            </div>
+                        <div class="card mb-3 card-service shadow-sm p-3" id="servicio-${s.id}" onclick="seleccionarServicio(${s.id})">
+                            <h6 class="mb-1 fw-bold">${s.nombre}</h6>
+                            <p class="text-muted small mb-0">⏱️ ${s.duracion} min | $${s.precio}</p>
                         </div>
                     `;
                 });
 
                 await actualizarCacheTurnos();
-
-            } catch (error) {
-                console.error("Error al arrancar la interfaz:", error);
-            }
+            } catch (err) { console.error(err); }
         });
 
         async function actualizarCacheTurnos() {
-            try {
-                const res = await fetch(`${window.location.origin}/api/turnos/maestro`);
-                turnosExistentesCache = await res.json();
-                verificarDisponibilidadHoraria();
-            } catch (err) { console.error(err); }
+            const res = await fetch(`${window.location.origin}/api/turnos/maestro`);
+            turnosExistentesCache = await res.json();
+            verificarDisponibilidadHoraria();
         }
 
         function verificarDisponibilidadHoraria() {
             const proId = parseInt(document.getElementById('select-profesional').value);
             const fechaSel = document.getElementById('input-fecha').value;
             const contenedor = document.getElementById('contenedor-horarios');
-            const tituloEstado = document.getElementById('titulo-estado-horarios');
-            
-            horaSeleccionada = null;
-            if (!fechaSel) return;
+            const titulo = document.getElementById('titulo-estado-horarios');
+            contenedor.innerHTML = ""; horaSeleccionada = null;
 
-            const fechaParseada = new Date(fechaSel + 'T00:00:00');
-            if (fechaParseada.getDay() === 0) {
-                tituloEstado.innerHTML = "❌ <b class='text-danger'>Centro Cerrado:</b> Los domingos no abrimos nuestras puertas.";
-                contenedor.innerHTML = "";
-                return;
-            } else {
-                tituloEstado.innerText = "Horarios Disponibles para la Fecha Seleccionada:";
+            if(!fechaSel || proId === 0) return;
+
+            if(new Date(fechaSel + 'T00:00:00').getDay() === 0) {
+                titulo.innerHTML = "<b class='text-danger'>❌ Domingo Cerrado</b>"; return;
             }
+            titulo.innerText = "Horarios Disponibles:";
 
-            const rangoHoras = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
-            contenedor.innerHTML = "";
-
-            rangoHoras.forEach(h => {
-                const stringFechaTurno = `${fechaSel} ${h}`;
-                const estaOcupado = turnosExistentesCache.some(t => t.profesional_id === proId && t.fecha_hora === stringFechaTurno);
-
-                const colDiv = document.createElement('div');
-                colDiv.className = "col-md-3 col-sm-4 col-6";
+            const rango = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+            rango.forEach(h => {
+                const stringMatch = `${fechaSel} ${h}`;
+                const ocupado = turnosExistentesCache.some(t => Number(t.profesional_id) === proId && String(t.fecha_hora).startsWith(stringMatch));
                 
-                if (estaOcupado) {
-                    colDiv.innerHTML = `<div class="time-slot occupied">${h}</div>`;
+                const col = document.createElement('div');
+                col.className = "col-3";
+                if(ocupado) {
+                    col.innerHTML = `<div class="time-slot occupied">${h}</div>`;
                 } else {
-                    colDiv.innerHTML = `<div class="time-slot" onclick="seleccionarHora('${h}', this)">${h}</div>`;
+                    col.innerHTML = `<div class="time-slot" onclick="seleccionarHora('${h}', this)">${h}</div>`;
                 }
-                contenedor.appendChild(colDiv);
+                contenedor.appendChild(col);
             });
         }
 
@@ -269,102 +165,57 @@
             servicioSeleccionadoId = id;
             document.querySelectorAll('.card-service').forEach(c => c.classList.remove('selected'));
             document.getElementById(`servicio-${id}`).classList.add('selected');
-            
-            const servicioEncontrado = serviciosCache.find(s => s.id === id);
-            if(servicioEncontrado && servicioEncontrado.descripcion) {
-                document.getElementById('txt-descripcion').innerText = servicioEncontrado.descripcion;
-                document.getElementById('info-descripcion').style.display = 'block';
-            }
         }
 
-        function seleccionarHora(hora, elemento) {
-            if(elemento.classList.contains('occupied')) return;
-            horaSeleccionada = hora;
-            document.querySelectorAll('.time-slot').forEach(t => {
-                if(!t.classList.contains('occupied')) {
-                    t.classList.remove('selected-slot');
-                }
-            });
-            elemento.classList.add('selected-slot');
+        function seleccionarHora(h, el) {
+            horaSeleccionada = h;
+            document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected-slot'));
+            el.classList.add('selected-slot');
         }
 
-        async function enviarReserva() {
-            const profesionalId = document.getElementById('select-profesional').value;
+        async function enviarReservaReal() {
+            const proId = parseInt(document.getElementById('select-profesional').value);
             const fecha = document.getElementById('input-fecha').value;
+            if(!servicioSeleccionadoId || !horaSeleccionada || proId === 0) { alert("Completa la selección."); return; }
 
-            if (!servicioSeleccionadoId || !horaSeleccionada || !fecha) {
-                alert("Por favor, selecciona un tratamiento, una fecha y un horario disponible.");
-                return;
-            }
-
-            const datosTurno = {
-                cliente_id: clienteIdDetectado, 
-                profesional_id: parseInt(profesionalId),
+            const payload = {
+                cliente_id: clienteIdDetectado || 1,
+                profesional_id: proId,
                 servicio_id: servicioSeleccionadoId,
                 fecha_hora: `${fecha} ${horaSeleccionada}`
             };
 
-            try {
-                const respuesta = await fetch(`${window.location.origin}/api/turnos/reserva`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(datosTurno)
-                });
+            const res = await fetch(`${window.location.origin}/api/turnos/reserva`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
 
-                if (respuesta.ok) {
-                    alert(`🎉 ¡Éxito! Tu reserva quedó guardada de forma automática.`);
-                    await actualizarCacheTurnos(); 
-                } else {
-                    alert("❌ Error al procesar reserva.");
-                }
-            } catch (error) {
-                alert("Hubo un error de conexión.");
-            }
+            if(res.ok) { alert("🎉 Turno guardado de forma real en Postgres."); await actualizarCacheTurnos(); }
+            else { alert("Error al reservar."); }
         }
 
         async function cargarMisTurnosModal() {
             const contenedor = document.getElementById('lista-mis-turnos');
-            contenedor.innerHTML = '<div class="small text-muted text-center">Consultando registros...</div>';
-            
-            try {
-                const res = await fetch(`${window.location.origin}/api/turnos/maestro`);
-                const turnos = await res.json();
-                
-                const misTurnos = turnos.filter(t => t.cliente_id === clienteIdDetectado);
-                contenedor.innerHTML = '';
+            contenedor.innerHTML = 'Cargando...';
+            const res = await fetch(`${window.location.origin}/api/turnos/maestro`);
+            const turnos = await res.json();
+            const misTurnos = turnos.filter(t => Number(t.cliente_id) === Number(clienteIdDetectado));
+            contenedor.innerHTML = '';
 
-                if(misTurnos.length === 0) {
-                    contenedor.innerHTML = `<div class="text-muted text-center small py-3">No registras turnos activos en este momento.</div>`;
-                    return;
-                }
-
-                misTurnos.forEach(t => {
-                    const serv = serviciosCache.find(s => s.id === t.servicio_id);
-                    const nombreServ = serv ? serv.nombre : `Tratamiento ID: ${t.servicio_id}`;
-                    const especialista = t.profesional_id === 2 ? "Estet. Lucía Gómez" : "Dra. Ana Valenzuela";
-
-                    contenedor.innerHTML += `
-                        <div class="card p-3 mb-2 border-0 shadow-sm" style="background-color: #fff9fb; border-left: 4px solid var(--rosa-f) !important;">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="mb-1 fw-bold" style="color: var(--rosa-f)">${nombreServ}</h6>
-                                    <p class="mb-0 small text-muted">📅 ${t.fecha_hora.split(' ')[0]} | 🕒 ${t.fecha_hora.split(' ')[1] || ''}</p>
-                                    <p class="mb-0 small text-muted">👩‍⚕️ ${especialista}</p>
-                                </div>
-                                <span class="badge bg-success rounded-pill" style="font-size:0.7rem;">Confirmado</span>
-                            </div>
-                        </div>
-                    `;
-                });
-            } catch (err) { contenedor.innerHTML = '<div class="text-danger small">Error de red.</div>'; }
+            if(misTurnos.length === 0) { contenedor.innerHTML = 'No tienes turnos agendados.'; return; }
+            misTurnos.forEach(t => {
+                const s = serviciosCache.find(serv => serv.id === t.servicio_id);
+                contenedor.innerHTML += `
+                    <div class="p-3 mb-2 bg-light rounded-3 border-start border-primary border-4">
+                        <h6><b>${s ? s.nombre : 'Servicio'}</b></h6>
+                        <small class="text-muted">📅 ${t.fecha_hora}</small>
+                    </div>
+                `;
+            });
         }
 
-        function cerrarSesionEfectivo() {
-            if(confirm("¿Deseas cerrar tu sesión en Estética Zen?")) {
-                localStorage.removeItem('emailUsuarioLogueado'); 
-                window.location.href = 'login.html'; 
-            }
-        }
+        function cerrarSesion() { localStorage.removeItem('emailUsuarioLogueado'); window.location.href = 'login.html'; }
     </script>
 </body>
 </html>

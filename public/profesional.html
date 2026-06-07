@@ -3,151 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agenda Profesional - Estética Zen</title>
+    <title>Panel Profesional - Estética Zen</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        :root { 
-            --rosa-p: #fce4ec; 
-            --rosa-f: #f06292; 
-            --rosa-h: #f8bbd0; 
-            --texto-oscuro: #4f4f4f;
-        }
-        body { 
-            background-color: #fff9fb; 
-            color: var(--texto-oscuro); 
-            font-family: 'Segoe UI', sans-serif; 
-        }
-        .navbar { 
-            background-color: white; 
-            border-bottom: 2px solid var(--rosa-p); 
-        }
-        .card-turno { 
-            border-left: 6px solid var(--rosa-f); 
-            border-radius: 20px; 
-            transition: 0.3s; 
-        }
-        .btn-check-estado { 
-            border-radius: 20px; 
-            font-size: 0.8rem; 
-            font-weight: 600;
-        }
-        .badge-hora {
-            background-color: var(--rosa-p);
-            color: var(--rosa-f);
-            font-weight: bold;
-            border-radius: 10px;
-            padding: 6px 12px;
-        }
+        :root { --rosa-f: #f06292; --rosa-p: #fce4ec; --texto-oscuro: #4f4f4f; }
+        body { background-color: #fff9fb; font-family: 'Segoe UI', sans-serif; color: var(--texto-oscuro); }
+        .card-agenda { border-radius: 20px; border: none; background: white; }
+        .badge-estado { font-weight: 600; border-radius: 10px; padding: 6px 12px; }
     </style>
 </head>
 <body>
-
-    <nav class="navbar navbar-light px-4 py-3 shadow-sm mb-5">
-        <div class="container-fluid d-flex justify-content-between align-items-center">
-            <div>
-                <a href="index.html" class="text-decoration-none small me-3" style="color: var(--rosa-f)">← Volver al Inicio</a>
-                <span class="navbar-brand h1 mb-0" style="color: var(--rosa-f);">🌸 ESTÉTICA ZEN</span>
-            </div>
-            <div>
-                <span class="text-muted small me-3 fw-bold">👩‍⚕️ Dra. Ana Valenzuela (Cosmiatra)</span>
-                <a href="login.html" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Cerrar Sesión</a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container" style="max-width: 800px;">
+    <div class="container mt-5" style="max-width: 900px;">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h4 class="fw-bold mb-1">Mis Citas Agendadas</h4>
-                <p class="text-muted small mb-0">Gestión y control de asistencia sincronizado en tiempo real con Neon SQL</p>
+                <h3 class="fw-bold" style="color: var(--rosa-f);" id="txt-saludo-profesional">🌸 Agenda del Especialista</h3>
+                <p class="text-muted small mb-0" id="txt-email-profesional">Cargando perfil...</p>
             </div>
-        </div>
-        
-        <div id="contenedor-citas-profesional">
-            <div class="text-muted text-center small py-4">Conectando con la base de datos central...</div>
+            <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="cerrarSesionPro()">Cerrar Sesión</button>
         </div>
 
+        <div class="card card-custom card-agenda shadow-sm p-4">
+            <h5 class="fw-bold mb-3">📋 Cronograma de Citas Asignadas (Ecosistema Real)</h5>
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr><th>Bloque / Fecha</th><th>Paciente (ID)</th><th>Tratamiento Solicitado</th><th class="text-center">Control de Cabina</th></tr>
+                </thead>
+                <tbody id="tabla-agenda-profesional"></tbody>
+            </table>
+        </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
-        // AL CARGAR LA PÁGINA: Traer catálogo y filtrar turnos reales para el Profesional ID: 1
+        let miIdProfesional = null;
+        let serviciosCache = [];
+
         document.addEventListener("DOMContentLoaded", async () => {
+            const emailLogueado = localStorage.getItem('emailUsuarioLogueado');
+            if(!emailLogueado) { window.location.href = 'login.html'; return; }
+
             try {
-                // 1. Necesitamos los nombres de los servicios primero para mapear el ID del turno
-                const resServicios = await fetch(`${window.location.origin}/api/servicios`);
-                const servicios = await resServicios.json();
+                // 1. Obtener tratamientos para mapear nombres
+                const resServ = await fetch(`${window.location.origin}/api/servicios`);
+                serviciosCache = await resServ.json();
 
-                // 2. Traer la bitácora maestra de turnos
-                const resTurnos = await fetch(`${window.location.origin}/api/turnos/maestro`);
-                const turnos = await resTurnos.json();
+                // 2. Buscar qué ID real de Neon corresponde a este correo
+                const resUser = await fetch(`${window.location.origin}/api/usuarios`);
+                const usuarios = await resUser.json();
+                const miPerfil = usuarios.find(u => u.email.toLowerCase() === emailLogueado.toLowerCase());
 
-                // 3. Filtrar para mostrar únicamente las citas de la Dra. Ana Valenzuela (ID: 1)
-                const turnosPro = turnos.filter(t => t.profesional_id === 1);
-                
-                const contenedor = document.getElementById('contenedor-citas-profesional');
-                contenedor.innerHTML = '';
-
-                if(turnosPro.length === 0) {
-                    contenedor.innerHTML = `<div class="text-muted text-center py-4 card shadow-sm border-0 rounded-4">No registras citas asignadas en la base de datos central para hoy.</div>`;
-                    return;
+                if(miPerfil) {
+                    miIdProfesional = miPerfil.id;
+                    document.getElementById('txt-saludo-profesional').innerText = `🌸 Agenda: ${miPerfil.nombre}`;
+                    document.getElementById('txt-email-profesional').innerText = `Conectado como Especialista ID Técnico: #${miPerfil.id} | ${miPerfil.email}`;
+                    await cargarCitasDelEspecialista();
                 }
-
-                // 4. Renderizar las tarjetas con tu diseño original de Bootstrap
-                turnosPro.forEach(t => {
-                    const servicioEncontrado = servicios.find(s => s.id === t.servicio_id);
-                    const nombreServicio = servicioEncontrado ? servicioEncontrado.nombre : `Servicio N° ${t.servicio_id}`;
-                    const duracionServicio = servicioEncontrado ? `${servicioEncontrado.duracion} min` : '60 min';
-                    
-                    // Separamos fecha y hora para la visualización del Badge
-                    const [fecha, hora] = t.fecha_hora.split(' ');
-
-                    contenedor.innerHTML += `
-                        <div class="card shadow-sm border-0 mb-3 card-turno" id="turno-${t.id}">
-                            <div class="card-body d-flex justify-content-between align-items-center p-4">
-                                <div>
-                                    <span class="badge badge-hora mb-2 d-inline-block">${hora || t.fecha_hora} AM</span>
-                                    <h5 class="mb-1 fw-bold" style="color: #333;">Paciente ID: ${t.cliente_id}</h5>
-                                    <p class="text-muted small mb-2">✨ ${nombreServicio} (${duracionServicio})</p>
-                                    <span class="small text-muted d-block mb-2">📅 Fecha: ${fecha}</span>
-                                    <span class="small fw-bold text-warning estado-texto">Estado: Pendiente</span>
-                                </div>
-                                <div class="d-flex gap-2 acciones-contenedor">
-                                    <button class="btn btn-outline-success btn-check-estado px-3" onclick="cambiarEstadoTurno(${t.id}, 'Completado')">✓ Completado</button>
-                                    <button class="btn btn-outline-danger btn-check-estado px-3" onclick="cambiarEstadoTurno(${t.id}, 'Ausente')">✗ Ausente</button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-
-            } catch (error) {
-                console.error("Error al sincronizar la agenda del profesional:", error);
-                document.getElementById('contenedor-citas-profesional').innerHTML = `<div class="text-danger text-center small py-3">Error crítico de comunicación con el motor del servidor.</div>`;
-            }
+            } catch (err) { console.error(err); }
         });
 
-        // Tu lógica original interactiva intacta para simular el cambio de estado en pantalla
-        function cambiarEstadoTurno(id, nuevoEstado) {
-            const tarjeta = document.getElementById(`turno-${id}`);
-            const textoEstado = tarjeta.querySelector('.estado-texto');
-            const contenedorAcciones = tarjeta.querySelector('.acciones-contenedor');
+        async function cargarCitasDelEspecialista() {
+            const tbody = document.getElementById('tabla-agenda-profesional');
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted small">Consultando agenda...</td></tr>';
 
-            if (nuevoEstado === 'Completado') {
-                tarjeta.style.borderLeftColor = "#198754"; 
-                tarjeta.style.backgroundColor = "#e8f5e9"; 
-                textoEstado.innerText = "Estado: ✓ Atendido con éxito";
-                textoEstado.className = "small fw-bold text-success";
-            } else {
-                tarjeta.style.borderLeftColor = "#dc3545"; 
-                tarjeta.style.backgroundColor = "#ffebee"; 
-                textoEstado.innerText = "Estado: ✗ Paciente Ausente";
-                textoEstado.className = "small fw-bold text-danger";
+            const resTurn = await fetch(`${window.location.origin}/api/turnos/maestro`);
+            const todosLosTurnos = await resTurn.json();
+
+            // Filtrado estricto por ID numérico real de la base de datos cloud
+            const misTurnosReales = todosLosTurnos.filter(t => Number(t.profesional_id) === Number(miIdProfesional));
+            tbody.innerHTML = '';
+
+            if(misTurnosReales.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted small py-4">No registras citas asignadas en Neon Cloud para tu ID técnico.</td></tr>';
+                return;
             }
 
-            contenedorAcciones.innerHTML = `<span class="badge bg-secondary rounded-pill px-3 py-2 small" style="font-size:0.75rem;">Asistencia Registrada</span>`;
+            misTurnosReales.forEach(t => {
+                const s = serviciosCache.find(serv => serv.id === t.servicio_id);
+                tbody.innerHTML += `
+                    <tr id="fila-pro-turno-${t.id}">
+                        <td><span class="badge bg-light text-dark fw-bold">${t.fecha_hora}</span></td>
+                        <td>Paciente ID: <code>#${t.cliente_id}</code></td>
+                        <td><b>${s ? s.nombre : 'Tratamiento'}</b></td>
+                        <td class="text-center" id="celda-accion-${t.id}">
+                            <button class="btn btn-sm btn-success rounded-pill px-3 me-1" onclick="cambiarEstadoCita(${t.id}, 'Completado')">✓ Atendido</button>
+                            <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="cambiarEstadoCita(${t.id}, 'Ausente')">✗ Ausente</button>
+                        </td>
+                    </tr>
+                `;
+            });
         }
+
+        function cambiarEstadoCita(idTurno, estado) {
+            const celda = document.getElementById(`celda-accion-${idTurno}`);
+            if(estado === 'Completado') {
+                celda.innerHTML = `<span class="badge bg-success badge-estado">✨ Atendido con Éxito</span>`;
+            } else {
+                celda.innerHTML = `<span class="badge bg-danger badge-estado">❌ Paciente Ausente</span>`;
+            }
+        }
+
+        function cerrarSesionPro() { localStorage.removeItem('emailUsuarioLogueado'); window.location.href = 'login.html'; }
     </script>
 </body>
 </html>
