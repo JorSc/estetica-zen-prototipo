@@ -63,7 +63,7 @@
             </div>
             <div class="mb-4 text-start">
                 <label class="form-label small fw-bold">Contraseña</label>
-                <!-- Ponemos el campo como "readonly" (solo lectura) para que el navegador no le inyecte los asteriscos -->
+                <!-- Evita la inyección de asteriscos del gestor de contraseñas con readonly inicial -->
                 <input type="password" id="password" class="form-control rounded-pill" placeholder="••••••••" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');">
             </div>
             
@@ -75,6 +75,7 @@
         </div>
     </div>
 
+    <!-- MODAL DE REGISTRO -->
     <div class="modal fade" id="modalRegistro" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content shadow-lg">
@@ -108,6 +109,20 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        // TRUCO DE CARGA SEGURA: Fuerza el vaciado absoluto tras el renderizado del navegador
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const inputEmail = document.getElementById('email');
+                const inputPass = document.getElementById('password');
+                
+                if (inputEmail) inputEmail.value = '';
+                if (inputPass) {
+                    inputPass.value = '';
+                    inputPass.removeAttribute('readonly'); 
+                }
+            }, 120); 
+        });
+
         function lanzarToast(mensaje) {
             const aviso = document.createElement('div');
             aviso.className = 'toast-rosa';
@@ -124,19 +139,6 @@
             aviso.innerText = mensaje;
             document.body.appendChild(aviso);
         }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                const inputEmail = document.getElementById('email');
-                const inputPass = document.getElementById('password');
-        
-                if (inputEmail) inputEmail.value = '';
-                if (inputPass) {
-                    inputPass.value = '';
-                    inputPass.removeAttribute('readonly'); // Habilita el campo para que el usuario pueda escribir
-                }
-            }, 100); // Espera 100 milisegundos para burlar el autocompletado del navegador
-        });
 
         function simularLogin() {
             const email = document.getElementById('email').value.trim();
