@@ -17,8 +17,8 @@
         .time-slot.selected-slot { background-color: var(--rosa-f) !important; color: white !important; }
         .btn-confirmar { background-color: var(--rosa-f); color: white; border-radius: 25px; font-weight: bold; border: none; }
         .btn-confirmar:hover { background-color: #ec407a; }
-        .modal-content { border-radius: 25px; }
-        .modal-header { background-color: var(--rosa-p); }
+        .modal-content { border-radius: 25px; border: none; }
+        .modal-header { background-color: var(--rosa-p); border-top-left-radius: 25px; border-top-right-radius: 25px; }
     </style>
 </head>
 <body>
@@ -65,10 +65,11 @@
         </div>
     </div>
 
+    <!-- 📋 MODAL MULTIFUNCIÓN: VER, CANCELAR Y REPROGRAMAR -->
     <div class="modal fade" id="modalMisTurnos" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title fw-bold">📋 Tus Turnos Agendados</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-content shadow-lg">
+                <div class="modal-header"><h5 class="modal-title fw-bold" style="color: var(--rosa-f);">📋 Gestión de tus Citas</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body p-4" id="lista-mis-turnos"></div>
             </div>
         </div>
@@ -80,6 +81,7 @@
         let horaSeleccionada = null;
         let serviciosCache = []; 
         let turnosExistentesCache = [];
+        let usuariosCacheGlobal = [];
         let clienteIdDetectado = null;
 
         document.getElementById('input-fecha').value = new Date().toISOString().split('T')[0];
@@ -91,32 +93,14 @@
 
             try {
                 const resUser = await fetch(`${window.location.origin}/api/usuarios`);
-                const listaUsuarios = await resUser.json();
+                usuariosCacheGlobal = await resUser.json();
                 
-                // Macheo estricto insensible a mayúsculas
-                const miUsuario = listaUsuarios.find(u => u.email.toLowerCase() === emailLogueado.toLowerCase());
-                if(miUsuario) {
-                    clienteIdDetectado = miUsuario.id;
-                } else {
-                    alert("No se pudo detectar el ID de usuario en Postgres. Reingresa.");
-                    window.location.href = 'login.html';
-                    return;
-                }
+                const miUsuario = usuariosCacheGlobal.find(u => u.email.toLowerCase() === emailLogueado.toLowerCase());
+                if(miUsuario) clienteIdDetectado = miUsuario.id;
 
-                // Carga de Profesionales
-                const selectPro = document.getElementById('select-profesional');
-                selectPro.innerHTML = '';
-                const profesionalesReales = listaUsuarios.filter(u => u.role === 'pro' || u.rol === 'pro');
-                
-                if(profesionalesReales.length === 0) {
-                    selectPro.innerHTML = `<option value="0">No hay especialistas en la BD</option>`;
-                } else {
-                    profesionalesReales.forEach(p => {
-                        selectPro.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
-                    });
-                }
+                // Carga de selectores principales
+                actualizarSelectProfesionales('select-profesional');
 
-                // Carga de Servicios con su Descripción Real incorporada
                 const resServ = await fetch(`${window.location.origin}/api/servicios`);
                 serviciosCache = await resServ.json();
                 const contenedor = document.getElementById('contenedor-servicios');
@@ -125,7 +109,7 @@
                     contenedor.innerHTML += `
                         <div class="card mb-3 card-service shadow-sm p-3" id="servicio-${s.id}" onclick="seleccionarServicio(${s.id})">
                             <h6 class="mb-1 fw-bold" style="color: var(--rosa-f);">${s.nombre}</h6>
-                            <p class="text-muted small mb-2">${s.descripcion || 'Sin descripción disponible.'}</p>
+                            <p class="text-muted small mb-2">${s.descripcion || 'Sin descripción.'}</p>
                             <p class="fw-bold small mb-0 text-secondary">⏱️ ${s.duracion} min | $${s.precio}</p>
                         </div>
                     `;
@@ -134,6 +118,16 @@
                 await actualizarCacheTurnos();
             } catch (err) { console.error(err); }
         });
+
+        function actualizarSelectProfesionales(idSelectElement) {
+            const selectEl = document.getElementById(idSelectElement);
+            if(!selectEl) return;
+            selectEl.innerHTML = '';
+            const pros = usuariosCacheGlobal.filter(u => u.rol === 'pro' || u.role === 'pro');
+            pros.forEach(p => {
+                selectEl.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
+            });
+        }
 
         async function actualizarCacheTurnos() {
             const res = await fetch(`${window.location.origin}/api/turnos/maestro`);
@@ -148,7 +142,7 @@
             const titulo = document.getElementById('titulo-estado-horarios');
             contenedor.innerHTML = ""; horaSeleccionada = null;
 
-            if(!fechaSel || proId === 0) return;
+            if(!fechaSel || !proId) return;
 
             if(new Date(fechaSel + 'T00:00:00').getDay() === 0) {
                 titulo.innerHTML = "<b class='text-danger'>❌ Domingo Cerrado</b>"; return;
@@ -186,53 +180,124 @@
         async function enviarReservaReal() {
             const proId = parseInt(document.getElementById('select-profesional').value);
             const fecha = document.getElementById('input-fecha').value;
-            
-            // Validación previa explícita
-            if(!servicioSeleccionadoId) { alert("Por favor, selecciona un tratamiento de la lista."); return; }
-            if(!horaSeleccionada) { alert("Por favor, selecciona un horario disponible para tu cita."); return; }
-            if(proId === 0 || isNaN(proId)) { alert("No se ha seleccionado un especialista válido."); return; }
+            if(!servicioSeleccionadoId) { alert("Selecciona un tratamiento."); return; }
+            if(!horaSeleccionada) { alert("Selecciona un horario."); return; }
 
-            const payload = {
-                cliente_id: clienteIdDetectado,
-                profesional_id: proId,
-                servicio_id: servicioSeleccionadoId,
-                fecha_hora: `${fecha} ${horaSeleccionada}`
-            };
+            const payload = { cliente_id: clienteIdDetectado, profesional_id: proId, servicio_id: servicioSeleccionadoId, fecha_hora: `${fecha} ${horaSeleccionada}` };
+            const res = await fetch(`${window.location.origin}/api/turnos/reserva`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
 
-            try {
-                const res = await fetch(`${window.location.origin}/api/turnos/reserva`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if(res.ok) { 
-                    alert("🎉 ¡Excelente! Tu turno fue guardado de forma real en Postgres."); 
-                    await actualizarCacheTurnos(); 
-                } else { 
-                    alert("Error en el servidor al intentar registrar la reserva."); 
-                }
-            } catch (err) { alert("Error de red al intentar conectar con Postgres."); }
+            if(res.ok) { alert("🎉 Turno agendado con éxito."); await actualizarCacheTurnos(); }
+            else { alert("Error al reservar."); }
         }
 
+        // 📋 CARGA TURNOS CON CANCELAR Y PANEL DE REPROGRAMACIÓN INCORPORADO
         async function cargarMisTurnosModal() {
             const contenedor = document.getElementById('lista-mis-turnos');
             contenedor.innerHTML = 'Cargando...';
+            
             const res = await fetch(`${window.location.origin}/api/turnos/maestro`);
             const turnos = await res.json();
             const misTurnos = turnos.filter(t => Number(t.cliente_id) === Number(clienteIdDetectado));
             contenedor.innerHTML = '';
 
             if(misTurnos.length === 0) { contenedor.innerHTML = 'No tienes turnos agendados.'; return; }
+            
             misTurnos.forEach(t => {
                 const s = serviciosCache.find(serv => serv.id === t.servicio_id);
                 contenedor.innerHTML += `
-                    <div class="p-3 mb-2 bg-light rounded-3 border-start border-primary border-4">
-                        <h6><b>${s ? s.nombre : 'Servicio'}</b></h6>
-                        <small class="text-muted">📅 ${t.fecha_hora}</small>
+                    <div class="p-3 mb-3 bg-light rounded-3 border-start border-primary border-4 shadow-sm">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1 fw-bold text-dark">${s ? s.nombre : 'Servicio'}</h6>
+                                <small class="text-muted d-block">📅 ${t.fecha_hora} hs</small>
+                            </div>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-sm btn-outline-secondary px-2 py-1 rounded-pill" style="font-size:0.75rem;" onclick="mostrarPanelReprogramar(${t.id}, ${t.servicio_id})">🔄 Mover</button>
+                                <button class="btn btn-sm btn-outline-danger px-2 py-1 rounded-pill" style="font-size:0.75rem;" onclick="cancelarTurnoClienteInSitu(${t.id})">🗑️ Quitar</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Panel expandible oculto para reprogramación rápida -->
+                        <div id="panel-repro-${t.id}" class="mt-3 p-2 bg-white rounded border d-none">
+                            <label class="form-label small fw-bold text-secondary mb-1">Elegir Nueva Fecha y Especialista:</label>
+                            <div class="row g-2">
+                                <div class="col-6"><input type="date" id="rep-fecha-${t.id}" class="form-control form-control-sm rounded-pill" value="${t.fecha_hora.split(' ')[0]}"></div>
+                                <div class="col-6"><select id="rep-pro-${t.id}" class="form-select form-select-sm rounded-pill"></select></div>
+                            </div>
+                            <div class="mt-2">
+                                <label class="form-label small fw-bold text-secondary mb-1">Horarios Libres:</label>
+                                <select id="rep-hora-${t.id}" class="form-select form-select-sm rounded-pill"></select>
+                            </div>
+                            <div class="d-flex gap-2 mt-3">
+                                <button class="btn btn-sm btn-success w-100 rounded-pill" onclick="confirmarReprogramacion(${t.id}, ${t.servicio_id})">Confirmar Cambio</button>
+                                <button class="btn btn-sm btn-light w-100 rounded-pill" onclick="document.getElementById('panel-repro-${t.id}').classList.add('d-none')">Cancelar</button>
+                            </div>
+                        </div>
                     </div>
                 `;
             });
+        }
+
+        // 🔄 MUESTRA EL SUBPANEL Y LLENA LOS HORARIOS DISPONIBLES DE REPROGRAMACIÓN
+        function mostrarPanelReprogramar(idTurno, idServicio) {
+            const panel = document.getElementById(`panel-repro-${idTurno}`);
+            panel.classList.toggle('d-none');
+            if(panel.classList.contains('d-none')) return;
+
+            // Llenamos el miniselector de profesionales del modal
+            const selectPro = document.getElementById(`rep-pro-${idTurno}`);
+            selectPro.innerHTML = '';
+            usuariosCacheGlobal.filter(u => u.rol === 'pro' || u.role === 'pro').forEach(p => {
+                selectPro.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
+            });
+
+            // Escuchadores dinámicos para recalcular horas libres dentro del modal
+            const recalcularHorasModal = () => {
+                const fSel = document.getElementById(`rep-fecha-${idTurno}`).value;
+                const pSel = parseInt(document.getElementById(`rep-pro-${idTurno}`).value);
+                const selectHora = document.getElementById(`rep-hora-${idTurno}`);
+                selectHora.innerHTML = '';
+
+                const rango = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+                rango.forEach(h => {
+                    const match = `${fSel} ${h}`;
+                    const ocupado = turnosExistentesCache.some(t => Number(t.profesional_id) === pSel && String(t.fecha_hora).startsWith(match));
+                    if(!ocupado) selectHora.innerHTML += `<option value="${h}">${h} hs (Disponible)</option>`;
+                });
+                if(selectHora.innerHTML === '') selectHora.innerHTML = '<option value="">No hay horarios libres</option>';
+            };
+
+            document.getElementById(`rep-fecha-${idTurno}`).onchange = recalcularHorasModal;
+            document.getElementById(`rep-pro-${idTurno}`).onchange = recalcularHorasModal;
+            recalcularHorasModal();
+        }
+
+        // 🚀 PROCESA LA REPROGRAMACIÓN REAL (ELIMINA ANTERIOR Y CREA NUEVO)
+        async function confirmarReprogramacion(idTurnoViejo, idServicio) {
+            const nuevaFecha = document.getElementById(`rep-fecha-${idTurnoViejo}`).value;
+            const nuevoProId = parseInt(document.getElementById(`rep-pro-${idTurnoViejo}`).value);
+            const nuevaHora = document.getElementById(`rep-hora-${idTurnoViejo}`).value;
+
+            if(!nuevaHora) { alert("Por favor selecciona un horario válido."); return; }
+
+            // 1. Borramos la cita vieja de Postgres
+            await fetch(`${window.location.origin}/api/turnos/${idTurnoViejo}`, { method: 'DELETE' });
+
+            // 2. Insertamos la cita nueva actualizada
+            const payload = { cliente_id: clienteIdDetectado, profesional_id: nuevoProId, servicio_id: idServicio, fecha_hora: `${nuevaFecha} ${nuevaHora}` };
+            const res = await fetch(`${window.location.origin}/api/turnos/reserva`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+
+            if(res.ok) {
+                alert("🔄 ¡Turno reprogramado de forma exitosa en la nube!");
+                await actualizarCacheTurnos();
+                await cargarMisTurnosModal();
+            } else { alert("Error al intentar reprogramar."); }
+        }
+
+        async function cancelarTurnoClienteInSitu(idTurno) {
+            if(!confirm("¿Deseas cancelar esta cita de forma definitiva?")) return;
+            const res = await fetch(`${window.location.origin}/api/turnos/${idTurno}`, { method: 'DELETE' });
+            if(res.ok) { alert("🚫 Cita eliminada."); await actualizarCacheTurnos(); await cargarMisTurnosModal(); }
         }
 
         function cerrarSesion() { localStorage.removeItem('emailUsuarioLogueado'); window.location.href = 'login.html'; }

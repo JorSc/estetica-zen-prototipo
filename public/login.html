@@ -86,10 +86,9 @@
                         <label class="form-label small fw-bold">Email de Contacto</label>
                         <input type="email" id="reg-email" class="form-control rounded-pill" placeholder="ejemplo@correo.com">
                     </div>
-                    <!-- 🔑 Campo de contraseña agregado al Registro -->
                     <div class="mb-4">
                         <label class="form-label small fw-bold">Crea tu Contraseña de Acceso</label>
-                        <input type="password" id="reg-password" class="form-control rounded-pill" placeholder="Mínimo 6 caracteres">
+                        <input type="password" id="reg-password" class="form-control rounded-pill" placeholder="Mínimo 4 caracteres">
                     </div>
                     <button class="btn btn-login w-100 py-2 rounded-pill shadow-sm" onclick="procesarRegistroReal()">CREAR CUENTA E INGRESAR</button>
                 </div>
@@ -128,7 +127,7 @@
             instanciaModal.show();
         }
 
-        // 🛡️ LOGIN: VALIDA EMAIL Y CONTRASEÑA REAL CONTRA POSTGRES
+        // 🛡️ LOGIN: DETERMINA LA REDIRECCIÓN LEYENDO EL ROL DE NEON
         async function verificarLoginReal() {
             const emailIn = document.getElementById('email').value.trim();
             const passwordIn = document.getElementById('password').value.trim();
@@ -138,19 +137,11 @@
                 return; 
             }
 
-            // Credencial Maestra Fija del Administrador General
-            if(emailIn === 'admin@zen.com' && passwordIn === 'admin123') {
-                localStorage.setItem('emailUsuarioLogueado', emailIn);
-                lanzarToast("🔓 Acceso Concedido como Administrador.");
-                setTimeout(() => { window.location.href = 'admin.html'; }, 1000);
-                return;
-            }
-
             try {
                 const res = await fetch(`${window.location.origin}/api/usuarios`);
                 const usuarios = await res.json();
                 
-                // Buscamos coincidencia exacta de email Y contraseña texto plano
+                // Buscamos coincidencia exacta de email Y contraseña en tu Postgres
                 const usuarioEncontrado = usuarios.find(u => 
                     u.email.toLowerCase() === emailIn.toLowerCase() && 
                     String(u.password).trim() === passwordIn
@@ -161,9 +152,14 @@
                     return;
                 }
 
+                // Guardamos el email del usuario logueado en sesión
                 localStorage.setItem('emailUsuarioLogueado', usuarioEncontrado.email);
 
-                if(usuarioEncontrado.rol === 'pro') {
+                // 🚀 REDIRECCIÓN EXACTA BASADA EN EL ROL DE LA BASE DE DATOS
+                if (usuarioEncontrado.rol === 'admin') {
+                    lanzarToast("🔓 Acceso Concedido como Administrador.");
+                    setTimeout(() => { window.location.href = 'admin.html'; }, 1000);
+                } else if (usuarioEncontrado.rol === 'pro') {
                     lanzarToast(`🔓 Agenda Profesional: Hola ${usuarioEncontrado.nombre}`);
                     setTimeout(() => { window.location.href = 'profesional.html'; }, 1000);
                 } else {
@@ -173,7 +169,7 @@
             } catch (err) { alert("Error al conectar con la base de datos cloud."); }
         }
 
-        // 🛡️ REGISTRO: INYECTA EMAIL, NOMBRE Y CONTRASEÑA A NEON
+        // 🛡️ REGISTRO COMPLETO DE CLIENTES NUEVOS
         async function procesarRegistroReal() {
             const nombre = document.getElementById('reg-nombre').value.trim();
             const email = document.getElementById('reg-email').value.trim();
@@ -184,11 +180,6 @@
                 return; 
             }
 
-            if(password.length < 4) {
-                alert("La contraseña debe tener al menos 4 caracteres por seguridad.");
-                return;
-            }
-
             try {
                 const respuesta = await fetch(`${window.location.origin}/api/usuarios`, {
                     method: 'POST',
@@ -196,7 +187,7 @@
                     body: JSON.stringify({ 
                         nombre: nombre, 
                         email: email, 
-                        password: password, // 🚀 Viaja directo a la columna password de Neon
+                        password: password, 
                         rol: 'cliente' 
                     })
                 });
