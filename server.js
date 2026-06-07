@@ -12,7 +12,7 @@ const sql = neon('postgresql://neondb_owner:npg_MCYqz6jmh5Ab@ep-red-term-actorn0
 // Servir archivos estáticos del Frontend
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ⚙️ INICIALIZACIÓN MÁGICA: Corrige las tablas reales en Neon Cloud
+// ⚙️ INICIALIZACIÓN MÁGICA: Corrige las tablas reales en Neon Cloud con contraseñas
 async function inicializarEstructuraBaseDatos() {
     try {
         // 1. Tabla de Servicios (Imprescindible serial id y campos limpios)
@@ -26,12 +26,13 @@ async function inicializarEstructuraBaseDatos() {
             );
         `;
         
-        // 2. Tabla de Usuarios
+        // 2. Tabla de Usuarios (¡Columna password incorporada con éxito! 🔑)
         await sql`
             CREATE TABLE IF NOT EXISTS usuarios (
                 id SERIAL PRIMARY KEY,
                 nombre VARCHAR(100) NOT NULL,
                 email VARCHAR(100) UNIQUE NOT NULL,
+                password TEXT DEFAULT '23456',
                 rol VARCHAR(30) DEFAULT 'cliente'
             );
         `;
@@ -47,7 +48,7 @@ async function inicializarEstructuraBaseDatos() {
             );
         `;
         
-        console.log("🚀 [NEON SQL] ¡Estructura de tablas sincronizada y validada con éxito!");
+        console.log("🚀 [NEON SQL] ¡Estructura de tablas sincronizada y validada con éxito con soporte de Claves!");
     } catch (e) {
         console.error("❌ Error crítico estructurando Neon Postgres:", e);
     }
@@ -67,15 +68,18 @@ app.get('/api/usuarios', async (req, res) => {
 });
 
 app.post('/api/usuarios', async (req, res) => {
-    const { nombre, email, rol } = req.body;
+    // 🔑 Captura la clave real enviada desde el Front o asigna una genérica segura
+    const { nombre, email, password, rol } = req.body;
     try {
         const rSeguro = rol || 'cliente';
+        const pSegura = password || '23456';
+        
         await sql`
-            INSERT INTO usuarios (nombre, email, rol) 
-            VALUES (${nombre}, ${email}, ${rSeguro})
-            ON CONFLICT (email) DO NOTHING
+            INSERT INTO usuarios (nombre, email, password, rol) 
+            VALUES (${nombre}, ${email}, ${pSegura}, ${rSeguro})
+            ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, rol = EXCLUDED.rol
         `;
-        res.status(201).json({ mensaje: "Usuario sincronizado correctamente." });
+        res.status(201).json({ mensaje: "Usuario sincronizado correctamente con clave." });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -139,7 +143,6 @@ app.get('/api/turnos/maestro', async (req, res) => {
 app.post('/api/turnos/reserva', async (req, res) => {
     const { cliente_id, profesional_id, servicio_id, fecha_hora } = req.body;
     try {
-        // Insert seguro e inmediato
         await sql`
             INSERT INTO turnos (cliente_id, profesional_id, servicio_id, fecha_hora) 
             VALUES (${parseInt(cliente_id)}, ${parseInt(profesional_id)}, ${parseInt(servicio_id)}, ${fecha_hora})
