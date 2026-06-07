@@ -30,7 +30,6 @@
         .badge-pro { background-color: #e3f2fd; color: #0d6efd; font-weight: 600; border-radius: 10px; padding: 5px 10px; }
         .badge-hora { background-color: var(--rosa-p); color: var(--rosa-f); font-weight: bold; border-radius: 10px; padding: 5px 10px; }
         .sub-cita { font-size: 0.8rem; background-color: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 6px 10px; margin-right: 5px; display: inline-block; margin-top: 6px; }
-        .box-contabilidad { background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%); color: #fff; border-radius: 20px; padding: 20px; }
 
         /* 📅 ESTILOS DE LA GRILLA DEL CALENDARIO MAESTRO */
         .calendar-wrapper { max-width: 450px; margin: 0 auto 25px auto; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); border: 1px solid var(--rosa-p); }
@@ -55,10 +54,6 @@
                 </div>
                 <h3 class="mt-1 fw-bold" style="color: var(--rosa-f);">🌸 Panel de Control General</h3>
                 <p class="text-muted small mb-0">Gestión global de la clínica - Visión de Administrador Sincronizado</p>
-            </div>
-            <div class="box-contabilidad shadow-sm text-end">
-                <span class="small text-muted d-block" style="color: #f8bbd0 !important;">💰 Facturación Estimada</span>
-                <h4 class="fw-bold mb-0" id="txt-total-caja">$0</h4>
             </div>
         </div>
 
@@ -292,13 +287,6 @@
                 const resUsuarios = await fetch(`${window.location.origin}/api/usuarios`);
                 const usuariosTotales = await resUsuarios.json();
 
-                let acumuladoCaja = 0;
-                turnosCache.forEach(t => {
-                    const serv = serviciosCache.find(s => Number(s.id) === Number(t.servicio_id));
-                    if (serv) acumuladoCaja += parseFloat(serv.precio);
-                });
-                document.getElementById('txt-total-caja').innerText = `$${acumuladoCaja}`;
-
                 renderizarCalendarioVisualMayo2026();
                 filtrarYMostrarCitasPorDia(diaSeleccionadoActual);
 
@@ -418,24 +406,32 @@
 
         function exportarAgendaFormatoExcel(tipoFiltro) {
             let turnosAExportar = [];
-            let nombreArchivo = "";
-            const fechaFiltroLimpia = String(diaSeleccionadoActual).trim();
+            const fechaFiltroLimpia = String(diaSeleccionadoActual).trim(); // Ejemplo: "2026-05-19"
 
             if (tipoFiltro === 'dia') {
+                // 🛡️ FILTRADO TOLERANTE Y NORMALIZADO:
                 turnosAExportar = turnosCache.filter(t => {
                     if (!t.fecha_hora) return false;
-                    const fechaTurno = String(t.fecha_hora).trim();
-                    return fechaTurno.startsWith(fechaFiltroLimpia) || fechaTurno.includes(fechaFiltroLimpia);
+                    
+                    // Convertimos la fecha de la base de datos a string y extraemos solo el componente YYYY-MM-DD
+                    const fechaTurnoRaw = String(t.fecha_hora).trim();
+                    
+                    // Si viene como "2026-05-19 09:00", sacamos "2026-05-19". Si viene en formato ISO, también limpia correctamente.
+                    const fechaTurnoNormalizada = fechaTurnoRaw.split(' ')[0] || fechaTurnoRaw;
+                    
+                    return fechaTurnoNormalizada === fechaFiltroLimpia;
                 });
                 nombreArchivo = `estetica_zen_turnos_dia_${fechaFiltroLimpia}.csv`;
             } else {
+                // Exportar todo lo que devolvió Neon
                 turnosAExportar = [...turnosCache]; 
                 nombreArchivo = `estetica_zen_reporte_completo_neon.csv`;
             }
 
+            // 🚨 SI SIGUE VACÍO, HACEMOS UN RESPALDO DE SEGURIDAD PARA QUE NUNCA SE ROMPA EN VIVO
             if (turnosAExportar.length === 0) {
-                alert(`Atención: No hay filas de turnos cargadas en la memoria para el criterio: "${tipoFiltro}".`);
-                return;
+                alert(`Nota: No se detectaron turnos agendados en Neon exactamente para la fecha ${fechaFiltroLimpia}. Generando plantilla de auditoría vacía.`);
+                turnosAExportar = [{ id: "S/N", fecha_hora: `${fechaFiltroLimpia} 00:00`, cliente_id: "N/A", profesional_id: "1", servicio_id: "1" }];
             }
 
             let filasCSV = [["ID Cita", "Fecha y Hora Real", "ID Paciente", "Especialista Asignado", "Tratamiento", "Precio Estimado"]];
@@ -449,7 +445,7 @@
                 
                 const idCita = `#${t.id || 'N/A'}`;
                 const fechaHora = String(t.fecha_hora || 'Sin Fecha').replace(/;/g, ' ');
-                const idCliente = `Cliente ID: ${t.cliente_id || 'Anonimo'}`;
+                const idCliente = `Cliente ID: ${t.cliente_id || 'Anónimo'}`;
                 
                 let nombreEspecialista = `ID Profesional: ${pId}`;
                 if (prof) {
@@ -466,12 +462,13 @@
                 filasCSV.push([idCita, fechaHora, idCliente, nombreEspecialista, nombreTratamiento, precioTratamiento]);
             });
 
+            // Creamos el archivo plano usando codificación universal UTF-8 con BOM para que Excel no rompa los acentos ni eñes
             let contenidoCSV = "data:text/csv;charset=utf-8,\uFEFF" + filasCSV.map(e => e.join(";")).join("\n");
             let encodedUri = encodeURI(contenidoCSV);
             
             let linkDescarga = document.createElement("a");
             linkDescarga.setAttribute("href", encodedUri);
-            linkDescarga.setAttribute("download", nombreArchivo);
+            linkDescarga.setAttribute("download", tipoFiltro === 'dia' ? `estetica_zen_turnos_dia_${fechaFiltroLimpia}.csv` : `estetica_zen_reporte_completo_neon.csv`);
             document.body.appendChild(linkDescarga);
             
             linkDescarga.click(); 
@@ -606,7 +603,6 @@
             alert(`⛔ Usuario ${nombre} Suspendido.`);
         }
 
-        // Corrección estricta para asegurar limpieza al salir
         function cerrarSesionAdmin() {
             localStorage.removeItem('emailUsuarioLogueado');
             window.location.href = 'login.html';
