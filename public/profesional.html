@@ -10,6 +10,8 @@
         body { background-color: #fff9fb; font-family: 'Segoe UI', sans-serif; color: var(--texto-oscuro); }
         .card-agenda { border-radius: 20px; border: none; background: white; }
         .badge-estado { font-weight: 600; border-radius: 10px; padding: 6px 12px; }
+        .btn-exportar-pro { background-color: #4f4f4f; color: white; border-radius: 25px; border: none; font-weight: 600; transition: 0.3s; }
+        .btn-exportar-pro:hover { background-color: #333; color: white; transform: translateY(-1px); }
     </style>
 </head>
 <body>
@@ -19,7 +21,11 @@
                 <h3 class="fw-bold" style="color: var(--rosa-f);" id="txt-saludo-profesional">🌸 Agenda del Especialista</h3>
                 <p class="text-muted small mb-0" id="txt-email-profesional">Cargando perfil...</p>
             </div>
-            <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="cerrarSesionPro()">Cerrar Sesión</button>
+            <div class="d-flex gap-2">
+                <!-- 📥 NUEVO: Botón de exportación rápida para el profesional -->
+                <button class="btn btn-sm btn-exportar-pro px-3 shadow-sm" onclick="exportarAgendaProfesionalReal()">📥 Exportar Mi Agenda (Excel)</button>
+                <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="cerrarSesionPro()">Cerrar Sesión</button>
+            </div>
         </div>
 
         <div class="card card-custom card-agenda shadow-sm p-4">
@@ -35,7 +41,9 @@
 
     <script>
         let miIdProfesional = null;
+        let miNombreProfesional = "";
         let serviciosCache = [];
+        let turnosProfesionalCacheGlobal = []; // Guardamos copia local para el exportador
 
         document.addEventListener("DOMContentLoaded", async () => {
             const emailLogueado = localStorage.getItem('emailUsuarioLogueado');
@@ -53,6 +61,7 @@
 
                 if(miPerfil) {
                     miIdProfesional = miPerfil.id;
+                    miNombreProfesional = miPerfil.nombre;
                     document.getElementById('txt-saludo-profesional').innerText = `🌸 Agenda: ${miPerfil.nombre}`;
                     document.getElementById('txt-email-profesional').innerText = `Conectado como Especialista ID Técnico: #${miPerfil.id} | ${miPerfil.email}`;
                     await cargarCitasDelEspecialista();
@@ -64,25 +73,25 @@
             const tbody = document.getElementById('tabla-agenda-profesional');
             tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted small">Consultando agenda...</td></tr>';
 
-            const resTurn = await fetch(`${window.location.origin}/api/turnos/maestro`);
+            // Usamos el endpoint detallado que ya tiene los nombres de pacientes resueltos por JOIN
+            const resTurn = await fetch(`${window.location.origin}/api/turnos/detallado`);
             const todosLosTurnos = await resTurn.json();
 
-            // Filtrado estricto por ID numérico real de la base de datos cloud
-            const misTurnosReales = todosLosTurnos.filter(t => Number(t.profesional_id) === Number(miIdProfesional));
+            // Filtrado estricto por ID numérico real de este profesional específico
+            turnosProfesionalCacheGlobal = todosLosTurnos.filter(t => Number(t.profesional_id) === Number(miIdProfesional));
             tbody.innerHTML = '';
 
-            if(misTurnosReales.length === 0) {
+            if(turnosProfesionalCacheGlobal.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted small py-4">No registras citas asignadas en Neon Cloud para tu ID técnico.</td></tr>';
                 return;
             }
 
-            misTurnosReales.forEach(t => {
-                const s = serviciosCache.find(serv => serv.id === t.servicio_id);
+            turnosProfesionalCacheGlobal.forEach(t => {
                 tbody.innerHTML += `
                     <tr id="fila-pro-turno-${t.id}">
-                        <td><span class="badge bg-light text-dark fw-bold">${t.fecha_hora}</span></td>
-                        <td>Paciente ID: <code>#${t.cliente_id}</code></td>
-                        <td><b>${s ? s.nombre : 'Tratamiento'}</b></td>
+                        <td><span class="badge bg-light text-dark fw-bold">${t.fecha_hora} hs</span></td>
+                        <td><b>${t.cliente_nombre || 'Usuario Registrado'}</b> <br><small class="text-muted">ID: #${t.cliente_id}</small></td>
+                        <td><b>${t.servicio_nombre || 'Tratamiento'}</b></td>
                         <td class="text-center" id="celda-accion-${t.id}">
                             <button class="btn btn-sm btn-success rounded-pill px-3 me-1" onclick="cambiarEstadoCita(${t.id}, 'Completado')">✓ Atendido</button>
                             <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="cambiarEstadoCita(${t.id}, 'Ausente')">✗ Ausente</button>
@@ -90,6 +99,39 @@
                     </tr>
                 `;
             });
+        }
+
+        // 📥 EXPORTADOR EXCLUSIVO PARA EL PROFESIONAL LOGUEADO (Con filtros anti-jeroglíficos)
+        function exportarAgendaProfesionalReal() {
+            if(turnosProfesionalCacheGlobal.length === 0) { 
+                alert("No tienes citas registradas en tu historial para exportar."); 
+                return; 
+            }
+
+            // Cabeceras adaptadas para el control de comisiones y atención del Pro
+            let contenidoCSV = "ID_Cita,Fecha_Y_Hora,Paciente_Nombre,Tratamiento_Solicitado\n";
+            
+            turnosProfesionalCacheGlobal.forEach(t => {
+                // Forzamos a Excel a tratarlo como texto para que no rompa la fecha
+                const fechaLimpiaParaExcel = `\t${t.fecha_hora}`;
+                
+                contenidoCSV += `${t.id},"${fechaLimpiaParaExcel}","${t.cliente_nombre || 'ID: '+t.cliente_id}","${t.servicio_nombre || 'ID: '+t.servicio_id}"\n`;
+            });
+
+            // Inyección de BOM UTF-8 para garantizar que los tildes salgan relucientes en Excel
+            const universalBom = "\uFEFF";
+            const blob = new Blob([universalBom + contenidoCSV], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            
+            // Reemplazamos espacios para armar un lindo nombre de archivo dinámico
+            const nombreSeguro = miNombreProfesional.replace(/\s+/g, '_');
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Mi_Agenda_Zen_${nombreSeguro}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function cambiarEstadoCita(idTurno, estado) {
