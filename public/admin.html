@@ -79,7 +79,7 @@
                         </div>
                         <div class="card card-custom shadow-sm p-3">
                             <table class="table table-hover mb-0" style="font-size: 0.9rem;">
-                                <thead class="table-light"><tr><th>Bloque</th><th>Paciente</th><th>Tratamiento</th><th>Especialista</th><th class="text-center">Acciones de Control</th></tr></thead>
+                                <thead class="table-light"><tr><th>Bloque</th><th>Paciente</th><th>Tratamiento</th><th>Especialista</th><th class="text-center">Estado</th><th class="text-center">Acciones de Control</th></tr></thead>
                                 <tbody id="tabla-maestra-turnos"></tbody>
                             </table>
                         </div>
@@ -166,7 +166,6 @@
                 const resUser = await fetch(`${window.location.origin}/api/usuarios`);
                 usuariosCache = await resUser.json();
 
-                // Render Servicios con botón de Modificación
                 const tServicios = document.getElementById('tabla-servicios'); tServicios.innerHTML = '';
                 serviciosCache.forEach(s => {
                     tServicios.innerHTML += `
@@ -185,7 +184,6 @@
                 renderizarCalendarioVisualMayo2026();
                 filtrarYMostrarCitasPorDia(diaSeleccionadoActual);
 
-                // Ficheros Separados
                 const tProfesionales = document.getElementById('tabla-profesionales-real'); tProfesionales.innerHTML = '';
                 const tClientes = document.getElementById('tabla-clientes-real'); tClientes.innerHTML = '';
 
@@ -216,17 +214,30 @@
             const delDia = turnosCache.filter(t => String(t.fecha_hora).startsWith(fechaFiltro));
             
             if(delDia.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted small py-3">No hay citas registradas para este día.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted small py-3">No hay citas registradas para este día.</td></tr>';
                 return;
             }
 
             delDia.forEach(t => {
+                // Parseo inteligente de estados para el Admin
+                let badgeEstadoHtml = `<span class="badge bg-warning text-dark">Pendiente</span>`;
+                let fechaHoraLimpia = t.fecha_hora;
+
+                if(t.fecha_hora.includes("//atendido")) {
+                    badgeEstadoHtml = `<span class="badge bg-success">Atendido</span>`;
+                    fechaHoraLimpia = t.fecha_hora.replace("//atendido", "");
+                } else if(t.fecha_hora.includes("//ausente")) {
+                    badgeEstadoHtml = `<span class="badge bg-danger">Ausente</span>`;
+                    fechaHoraLimpia = t.fecha_hora.replace("//ausente", "");
+                }
+
                 tbody.innerHTML += `
                     <tr>
-                        <td><span class="badge bg-light text-dark">${t.fecha_hora.split(' ')[1] || '09:00'} hs</span></td>
+                        <td><span class="badge bg-light text-dark">${fechaHoraLimpia.split(' ')[1] || '09:00'} hs</span></td>
                         <td><b>${t.cliente_nombre || 'Usuario Registrado'}</b> <br><small class="text-muted">ID: #${t.cliente_id}</small></td>
                         <td>${t.servicio_nombre || 'Tratamiento'}</td>
                         <td><span class="badge bg-info text-dark">${t.profesional_nombre || 'Especialista'}</span></td>
+                        <td class="text-center">${badgeEstadoHtml}</td>
                         <td class="text-center">
                             <div class="d-flex justify-content-center gap-1">
                                 <button class="btn btn-xs btn-outline-secondary btn-sm rounded-pill" onclick="mostrarPanelReprogramarAdmin(${t.id})">🔄 Mover</button>
@@ -236,7 +247,7 @@
                             <div id="panel-repro-adm-${t.id}" class="mt-2 p-2 bg-light rounded border text-start d-none" style="font-size:0.8rem;">
                                 <div class="mb-1">
                                     <label class="fw-bold text-secondary small">Nueva Fecha:</label>
-                                    <input type="date" id="adm-fe-${t.id}" class="form-control form-control-sm rounded-pill" value="${t.fecha_hora.split(' ')[0]}">
+                                    <input type="date" id="adm-fe-${t.id}" class="form-control form-control-sm rounded-pill" value="${fechaHoraLimpia.split(' ')[0]}">
                                 </div>
                                 <div class="mb-1">
                                     <label class="fw-bold text-secondary small">Especialista Técnico:</label>
@@ -301,7 +312,6 @@
             }
         }
 
-        // 📥 EXPORTADOR AVANZADO INTELIGENTE CON PARSEO ANTI-ERRORES DE TILDES NATIVO
         function exportarAgendaReal(tipo) {
             if(turnosCache.length === 0) { alert("No hay datos en Postgres para exportar."); return; }
 
@@ -312,38 +322,31 @@
                 turnosAExportar = turnosCache.filter(t => String(t.fecha_hora).startsWith(diaSeleccionadoActual));
                 nombreArchivo = `Reporte_Turnos_Dia_${diaSeleccionadoActual}.csv`;
             } else {
-                turnosAExportar = turnosCache;
+                turnosAExportar = turnosCache; 
                 nombreArchivo = "Reporte_Maestro_Turnos_Mes_Completo.csv";
             }
 
-            if(turnosAExportar.length === 0) { alert("No hay registros en la fecha seleccionada."); return; }
+            if(turnosAExportar.length === 0) { alert("No hay registros."); return; }
 
-            // Cabeceras institucionales
-            let contenidoCSV = "ID_Turno,Fecha_Hora,Paciente_Nombre,Especialista_Asignado,Tratamiento_Solicitado\n";
+            let contenidoCSV = "ID_Turno,Fecha_Hora,Paciente_Nombre,Especialista_Asignado,Tratamiento_Solicitado,Estado_Cita\n";
             
             turnosAExportar.forEach(t => {
-                // ✨ TRUCO MAESTRO: Agregamos una pestaña de espacio "\t" antes de la fecha.
-                // Esto fuerza a Excel a tratarlo como texto plano y evita que dibuje el número "46181"
-                const fechaFormateadaParaExcel = `\t${t.fecha_hora}`;
+                let est = "Pendiente";
+                let fh = t.fecha_hora;
+                if(t.fecha_hora.includes("//atendido")) { est = "Atendido"; fh = t.fecha_hora.replace("//atendido",""); }
+                if(t.fecha_hora.includes("//ausente")) { est = "Ausente"; fh = t.fecha_hora.replace("//ausente",""); }
                 
-                contenidoCSV += `${t.id},"${fechaFormateadaParaExcel}","${t.customer_name || t.cliente_nombre || 'ID: '+t.cliente_id}","${t.professional_name || t.profesional_nombre || 'ID: '+t.profesional_id}","${t.service_name || t.servicio_nombre || 'ID: '+t.servicio_id}"\n`;
+                contenidoCSV += `${t.id},"\t${fh}","${t.cliente_nombre || 'ID: '+t.cliente_id}","${t.profesional_nombre || 'ID: '+t.profesional_id}","${t.servicio_nombre || 'ID: '+t.servicio_id}","${est}"\n`;
             });
 
-            // Firma digital BOM UTF-8 para corregir tildes y caracteres especiales
-            const universalBom = "\uFEFF";
-            const blob = new Blob([universalBom + contenidoCSV], { type: 'text/csv;charset=utf-8;' });
+            constUniversalBom = "\uFEFF";
+            const blob = new Blob([constUniversalBom + contenidoCSV], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            
-            link.setAttribute("href", url);
+            link.setAttribute("href", URL.createObjectURL(blob));
             link.setAttribute("download", nombreArchivo);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link);
         }
 
-        // ✏️ ABM DINÁMICO: CONFIGURACIÓN DE MODALES PARA NUEVO O EDICIÓN
         function abrirModalCrear() {
             document.getElementById('form-id').value = '';
             document.getElementById('form-nombre').value = '';
@@ -379,24 +382,13 @@
             let url = `${window.location.origin}/api/servicios`;
             let metodo = 'POST';
 
-            // Si el campo ID tiene un valor, significa que es una actualización (PUT)
             if(id) {
                 url = `${window.location.origin}/api/servicios/${id}`;
                 metodo = 'PUT';
             }
 
-            const res = await fetch(url, { 
-                method: metodo, 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ nombre, duracion, precio, descripcion }) 
-            });
-            
-            if(res.ok) {
-                miModalServicioBootstrap.hide(); 
-                await cargarTodoElEcosistemaReal();
-            } else {
-                alert("Error al guardar en Postgres.");
-            }
+            const res = await fetch(url, { method: metodo, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, duracion, precio, descripcion }) });
+            if(res.ok) { miModalServicioBootstrap.hide(); await cargarTodoElEcosistemaReal(); }
         }
 
         async function guardarProfesionalReal() {
