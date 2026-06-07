@@ -16,12 +16,10 @@
         .nav-link.active { color: var(--rosa-f) !important; background-color: var(--rosa-p) !important; border-bottom: 3px solid var(--rosa-f) !important; }
         .calendar-wrapper { max-width: 450px; margin: 0 auto 25px auto; background: white; padding: 15px; border-radius: 15px; border: 1px solid var(--rosa-p); }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
-        .calendar-day-header { font-weight: bold; font-size: 0.8rem; color: #aaa; }
         .calendar-cell { background: #fafafa; border-radius: 10px; padding: 10px 0; font-size: 0.9rem; cursor: pointer; position: relative; min-height: 45px; display: flex; align-items: center; justify-content: center; }
         .calendar-cell.active-day { background: var(--rosa-f) !important; color: white !important; font-weight: bold; }
         .calendar-cell .dot-indicator { width: 6px; height: 6px; background-color: var(--rosa-f); border-radius: 50%; position: absolute; bottom: 4px; }
         .calendar-cell.active-day .dot-indicator { background-color: white; }
-        .calendar-cell.empty-cell { background: transparent; cursor: default; }
         .modal-content { border-radius: 25px; border: none; }
         .modal-header { background-color: var(--rosa-p); border-top-left-radius: 25px; border-top-right-radius: 25px; }
     </style>
@@ -43,6 +41,7 @@
         </ul>
 
         <div class="tab-content" id="adminTabsContent">
+            <!-- ABM SERVICIOS -->
             <div class="tab-pane fade show active" id="panel-servicios" role="tabpanel">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="fw-bold mb-0">Tratamientos en Postgres</h5>
@@ -56,6 +55,7 @@
                 </div>
             </div>
 
+            <!-- CALENDARIO MAESTRO -->
             <div class="tab-pane fade" id="panel-calendario" role="tabpanel">
                 <div class="row">
                     <div class="col-md-4">
@@ -68,9 +68,7 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="fw-bold mb-0" id="titulo-filtro-agenda">Citas del Día</h5>
                             <div class="dropdown">
-                                <button class="btn btn-sm btn-dark dropdown-toggle rounded-pill px-3 shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    📥 Exportar Citas
-                                </button>
+                                <button class="btn btn-sm btn-dark dropdown-toggle rounded-pill px-3 shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">📥 Exportar Citas</button>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li><a class="dropdown-menu-item dropdown-item small fw-bold" href="javascript:void(0);" onclick="exportarAgendaReal('dia')">📅 Solo el día seleccionado</a></li>
                                     <li><a class="dropdown-menu-item dropdown-item small fw-bold" href="javascript:void(0);" onclick="exportarAgendaReal('mes')">📊 Todo el mes completo</a></li>
@@ -87,10 +85,11 @@
                 </div>
             </div>
 
+            <!-- TAB FICHEROS SEPARADOS -->
             <div class="tab-pane fade" id="panel-usuarios" role="tabpanel">
                 <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
                     <h5 class="fw-bold mb-0" style="color: var(--rosa-f);">📋 Fichero de Personal Técnico (Pros)</h5>
-                    <button class="btn btn-nuevo shadow-sm btn-sm" data-bs-toggle="modal" data-bs-target="#modalAltaProfesional" style="background-color: #4f4f4f;">+ Registrar Profesional Técnico</button>
+                    <button class="btn btn-nuevo shadow-sm btn-sm" onclick="abrirModalAltaPro()" style="background-color: #4f4f4f;">+ Registrar Profesional Técnico</button>
                 </div>
                 <div class="card card-custom shadow-sm p-3 mb-5">
                     <table class="table table-hover mb-0">
@@ -110,19 +109,17 @@
         </div>
     </div>
 
+    <!-- MODALS -->
     <div class="modal fade" id="modalServicio" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title fw-bold" id="modal-servicio-titulo">🛠️ Tratamiento</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-header"><h5 class="modal-title fw-bold" id="modal-servicio-titulo">🛠 /> Tratamiento</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body p-4">
                     <input type="hidden" id="form-id">
                     <div class="mb-3"><label class="form-label small fw-bold">Nombre del Servicio</label><input type="text" id="form-nombre" class="form-control rounded-pill"></div>
                     <div class="mb-3"><label class="form-label small fw-bold">Duración (min)</label><input type="number" id="form-duracion" class="form-control rounded-pill"></div>
                     <div class="mb-3"><label class="form-label small fw-bold">Precio ($)</label><input type="number" id="form-precio" class="form-control rounded-pill"></div>
-                    <div class="mb-4">
-                        <label class="form-label small fw-bold">Descripción del Tratamiento</label>
-                        <textarea id="form-descripcion" class="form-control" rows="3" style="border-radius: 15px;" placeholder="Detalles del tratamiento..."></textarea>
-                    </div>
+                    <div class="mb-4"><label class="form-label small fw-bold">Descripción del Tratamiento</label><textarea id="form-descripcion" class="form-control" rows="3" style="border-radius: 15px;"></textarea></div>
                     <button class="btn btn-rosa w-100 py-2 rounded-pill text-white" style="background-color: var(--rosa-f);" onclick="procesarGuardadoServicio()">Guardar en Postgres</button>
                 </div>
             </div>
@@ -137,21 +134,27 @@
                     <div class="mb-3"><label class="form-label small fw-bold">Nombre Completo y Especialidad</label><input type="text" id="pro-nombre" class="form-control rounded-pill" placeholder="Ej: Dra. Valeria Rossi"></div>
                     <div class="mb-3"><label class="form-label small fw-bold">Email Institucional</label><input type="email" id="pro-email" class="form-control rounded-pill" placeholder="ejemplo@zen.com"></div>
                     <div class="mb-3"><label class="form-label small fw-bold">Asignar Contraseña Real</label><input type="text" id="pro-password" class="form-control rounded-pill" value="23456"></div>
-                    <button class="btn btn-dark w-100 py-2 rounded-pill" onclick="guardarProfesionalReal()">Dar de Alta e Inyectar en Postgres</button>
+                    
+                    <!-- 🎯 DINÁMICO: Checkboxes para tildar qué tratamientos realiza este médico -->
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold d-block text-secondary">Habilitar Tratamientos Autorizados:</label>
+                        <div id="contenedor-checkboxes-servicios" class="p-3 bg-light rounded-3 style-scroll" style="max-height:180px; overflow-y:auto;"></div>
+                    </div>
+                    
+                    <button class="btn btn-dark w-100 py-2 rounded-pill" onclick="guardarProfesionalReal()">Dar de Alta e Inyectar Relaciones</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
         let serviciosCache = []; let turnosCache = []; let usuariosCache = [];
         let diaSeleccionadoActual = "2026-06-07";
-        let miModalServicioBootstrap = null;
+        let miModalServicioBootstrap = null; let miModalProBootstrap = null;
 
         document.addEventListener("DOMContentLoaded", async () => { 
             miModalServicioBootstrap = new bootstrap.Modal(document.getElementById('modalServicio'));
+            miModalProBootstrap = new bootstrap.Modal(document.getElementById('modalAltaProfesional'));
             await cargarTodoElEcosistemaReal(); 
         });
 
@@ -168,17 +171,7 @@
 
                 const tServicios = document.getElementById('tabla-servicios'); tServicios.innerHTML = '';
                 serviciosCache.forEach(s => {
-                    tServicios.innerHTML += `
-                        <tr>
-                            <td>#${s.id}</td>
-                            <td><b>${s.nombre}</b><br><small class="text-muted">${s.descripcion || 'Sin descripción.'}</small></td>
-                            <td>${s.duracion} min</td>
-                            <td class="text-success">$${s.precio}</td>
-                            <td class="text-center">
-                                <button class="btn btn-sm btn-outline-secondary rounded-pill me-1" onclick="abrirModalEditarServicio(${s.id})">✏️ Editar</button>
-                                <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="eliminarServicio(${s.id})">Borrar</button>
-                            </td>
-                        </tr>`;
+                    tServicios.innerHTML += `<tr><td>#${s.id}</td><td><b>${s.nombre}</b><br><small class="text-muted">${s.descripcion || ''}</small></td><td>${s.duracion} min</td><td class="text-success">$${s.precio}</td><td class="text-center"><button class="btn btn-sm btn-outline-secondary rounded-pill me-1" onclick="abrirModalEditarServicio(${s.id})">✏️ Editar</button><button class="btn btn-sm btn-outline-danger rounded-pill" onclick="eliminarServicio(${s.id})">Borrar</button></td></tr>`;
                 });
 
                 renderizarCalendarioVisualMayo2026();
@@ -197,6 +190,45 @@
             } catch (err) { console.error(err); }
         }
 
+        function abrirModalAltaPro() {
+            document.getElementById('pro-nombre').value = '';
+            document.getElementById('pro-email').value = '';
+            
+            // Dibujamos dinámicamente la lista de servicios en formato checkbox
+            const cont = document.getElementById('contenedor-checkboxes-servicios');
+            cont.innerHTML = '';
+            serviciosCache.forEach(s => {
+                cont.innerHTML += `
+                    <div class="form-check mb-1">
+                        <input class="form-check-input chk-servicio-pro" type="checkbox" value="${s.id}" id="chk-s-${s.id}">
+                        <label class="form-check-label small fw-bold" for="chk-s-${s.id}">${s.nombre}</label>
+                    </div>`;
+            });
+            miModalProBootstrap.show();
+        }
+
+        async function guardarProfesionalReal() {
+            const nombre = document.getElementById('pro-nombre').value.trim();
+            const email = document.getElementById('pro-email').value.trim();
+            const password = document.getElementById('pro-password').value.trim();
+            
+            // Recolectamos los IDs de los servicios tildados
+            const serviciosAsignados = [];
+            document.querySelectorAll('.chk-servicio-pro:checked').forEach(chk => {
+                serviciosAsignados.push(chk.value);
+            });
+
+            if(!nombre || !email || !password) { alert("Complete los campos."); return; }
+            if(serviciosAsignados.length === 0) { alert("Tilda al menos un tratamiento para este especialista."); return; }
+
+            const res = await fetch(`${window.location.origin}/api/usuarios`, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ nombre, email, password, rol: 'pro', serviciosAsignados }) 
+            });
+            if(res.ok) { miModalProBootstrap.hide(); await cargarTodoElEcosistemaReal(); }
+        }
+
         function renderizarCalendarioVisualMayo2026() {
             const contenedor = document.getElementById('grilla-calendario-visual'); contenedor.innerHTML = "";
             for(let dia=1; dia<=30; dia++) {
@@ -212,196 +244,19 @@
         function filtrarYMostrarCitasPorDia(fechaFiltro) {
             const tbody = document.getElementById('tabla-maestra-turnos'); tbody.innerHTML = "";
             const delDia = turnosCache.filter(t => String(t.fecha_hora).startsWith(fechaFiltro));
-            
-            if(delDia.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted small py-3">No hay citas registradas para este día.</td></tr>';
-                return;
-            }
+            if(delDia.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted small py-3">No hay citas.</td></tr>'; return; }
 
             delDia.forEach(t => {
-                // Parseo inteligente de estados para el Admin
                 let badgeEstadoHtml = `<span class="badge bg-warning text-dark">Pendiente</span>`;
                 let fechaHoraLimpia = t.fecha_hora;
+                if(t.fecha_hora.includes("//atendido")) { badgeEstadoHtml = `<span class="badge bg-success">Atendido</span>`; fechaHoraLimpia = t.fecha_hora.replace("//atendido", ""); }
+                else if(t.fecha_hora.includes("//ausente")) { badgeEstadoHtml = `<span class="badge bg-danger">Ausente</span>`; fechaHoraLimpia = t.fecha_hora.replace("//ausente", ""); }
 
-                if(t.fecha_hora.includes("//atendido")) {
-                    badgeEstadoHtml = `<span class="badge bg-success">Atendido</span>`;
-                    fechaHoraLimpia = t.fecha_hora.replace("//atendido", "");
-                } else if(t.fecha_hora.includes("//ausente")) {
-                    badgeEstadoHtml = `<span class="badge bg-danger">Ausente</span>`;
-                    fechaHoraLimpia = t.fecha_hora.replace("//ausente", "");
-                }
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td><span class="badge bg-light text-dark">${fechaHoraLimpia.split(' ')[1] || '09:00'} hs</span></td>
-                        <td><b>${t.cliente_nombre || 'Usuario Registrado'}</b> <br><small class="text-muted">ID: #${t.cliente_id}</small></td>
-                        <td>${t.servicio_nombre || 'Tratamiento'}</td>
-                        <td><span class="badge bg-info text-dark">${t.profesional_nombre || 'Especialista'}</span></td>
-                        <td class="text-center">${badgeEstadoHtml}</td>
-                        <td class="text-center">
-                            <div class="d-flex justify-content-center gap-1">
-                                <button class="btn btn-xs btn-outline-secondary btn-sm rounded-pill" onclick="mostrarPanelReprogramarAdmin(${t.id})">🔄 Mover</button>
-                                <button class="btn btn-xs btn-outline-danger btn-sm rounded-pill" onclick="cancelarTurnoAdmin(${t.id})">Quitar</button>
-                            </div>
-                            
-                            <div id="panel-repro-adm-${t.id}" class="mt-2 p-2 bg-light rounded border text-start d-none" style="font-size:0.8rem;">
-                                <div class="mb-1">
-                                    <label class="fw-bold text-secondary small">Nueva Fecha:</label>
-                                    <input type="date" id="adm-fe-${t.id}" class="form-control form-control-sm rounded-pill" value="${fechaHoraLimpia.split(' ')[0]}">
-                                </div>
-                                <div class="mb-1">
-                                    <label class="fw-bold text-secondary small">Especialista Técnico:</label>
-                                    <select id="adm-pro-${t.id}" class="form-select form-select-sm rounded-pill"></select>
-                                </div>
-                                <div class="mb-2">
-                                    <label class="fw-bold text-secondary small">Bloque Horario:</label>
-                                    <select id="adm-ho-${t.id}" class="form-select form-select-sm rounded-pill"></select>
-                                </div>
-                                <button class="btn btn-sm btn-success w-100 rounded-pill py-1" onclick="confirmarReprogramacionAdmin(${t.id}, ${t.cliente_id}, ${t.servicio_id})">Confirmar Cambio</button>
-                            </div>
-                        </td>
-                    </tr>`;
+                tbody.innerHTML += `<tr><td><span class="badge bg-light text-dark">${fechaHoraLimpia.split(' ')[1] || '09:00'} hs</span></td><td><b>${t.cliente_nombre || 'Usuario'}</b></td><td>${t.servicio_nombre || 'Tratamiento'}</td><td><span class="badge bg-info text-dark">${t.profesional_nombre || 'Especialista'}</span></td><td class="text-center">${badgeEstadoHtml}</td><td class="text-center"><button class="btn btn-xs btn-outline-secondary btn-sm rounded-pill px-2 me-1" onclick="mostrarPanelReprogramarAdmin(${t.id})">🔄 Mover</button><button class="btn btn-xs btn-outline-danger btn-sm rounded-pill px-2" onclick="cancelarTurnoAdmin(${t.id})">Quitar</button></td></tr>`;
             });
         }
 
-        function mostrarPanelReprogramarAdmin(idTurno) {
-            const panel = document.getElementById(`panel-repro-adm-${idTurno}`);
-            panel.classList.toggle('d-none');
-            if(panel.classList.contains('d-none')) return;
-
-            const selectPro = document.getElementById(`adm-pro-${idTurno}`);
-            selectPro.innerHTML = '';
-            usuariosCache.filter(u => u.rol === 'pro').forEach(p => {
-                selectPro.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
-            });
-
-            const recalcularHorasAdmin = () => {
-                const fSel = document.getElementById(`adm-fe-${idTurno}`).value;
-                const pSel = parseInt(document.getElementById(`adm-pro-${idTurno}`).value);
-                const selectHora = document.getElementById(`adm-ho-${idTurno}`);
-                selectHora.innerHTML = '';
-
-                const rango = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
-                rango.forEach(h => {
-                    const match = `${fSel} ${h}`;
-                    const ocupado = turnosCache.some(t => Number(t.profesional_id) === pSel && String(t.fecha_hora).startsWith(match) && t.id !== idTurno);
-                    if(!ocupado) selectHora.innerHTML += `<option value="${h}">${h} hs</option>`;
-                });
-            };
-
-            document.getElementById(`adm-fe-${idTurno}`).onchange = recalcularHorasAdmin;
-            document.getElementById(`adm-pro-${idTurno}`).onchange = recalcularHorasAdmin;
-            recalcularHorasAdmin();
-        }
-
-        async function confirmarReprogramacionAdmin(idTurno, clienteId, servicioId) {
-            const nuevaFecha = document.getElementById(`adm-fe-${idTurno}`).value;
-            const nuevoProId = parseInt(document.getElementById(`adm-pro-${idTurno}`).value);
-            const nuevaHora = document.getElementById(`adm-ho-${idTurno}`).value;
-
-            if(!nuevaHora) { alert("Selecciona un bloque válido."); return; }
-
-            await fetch(`${window.location.origin}/api/turnos/${idTurno}`, { method: 'DELETE' });
-
-            const payload = { cliente_id: clienteId, profesional_id: nuevoProId, servicio_id: servicioId, fecha_hora: `${nuevaFecha} ${nuevaHora}` };
-            const res = await fetch(`${window.location.origin}/api/turnos/reserva`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-
-            if(res.ok) {
-                alert("🔄 Cita modificada de forma exitosa por auditoría de Admin.");
-                await cargarTodoElEcosistemaReal();
-            }
-        }
-
-        function exportarAgendaReal(tipo) {
-            if(turnosCache.length === 0) { alert("No hay datos en Postgres para exportar."); return; }
-
-            let turnosAExportar = [];
-            let nombreArchivo = "";
-
-            if(tipo === 'dia') {
-                turnosAExportar = turnosCache.filter(t => String(t.fecha_hora).startsWith(diaSeleccionadoActual));
-                nombreArchivo = `Reporte_Turnos_Dia_${diaSeleccionadoActual}.csv`;
-            } else {
-                turnosAExportar = turnosCache; 
-                nombreArchivo = "Reporte_Maestro_Turnos_Mes_Completo.csv";
-            }
-
-            if(turnosAExportar.length === 0) { alert("No hay registros."); return; }
-
-            let contenidoCSV = "ID_Turno,Fecha_Hora,Paciente_Nombre,Especialista_Asignado,Tratamiento_Solicitado,Estado_Cita\n";
-            
-            turnosAExportar.forEach(t => {
-                let est = "Pendiente";
-                let fh = t.fecha_hora;
-                if(t.fecha_hora.includes("//atendido")) { est = "Atendido"; fh = t.fecha_hora.replace("//atendido",""); }
-                if(t.fecha_hora.includes("//ausente")) { est = "Ausente"; fh = t.fecha_hora.replace("//ausente",""); }
-                
-                contenidoCSV += `${t.id},"\t${fh}","${t.cliente_nombre || 'ID: '+t.cliente_id}","${t.profesional_nombre || 'ID: '+t.profesional_id}","${t.servicio_nombre || 'ID: '+t.servicio_id}","${est}"\n`;
-            });
-
-            constUniversalBom = "\uFEFF";
-            const blob = new Blob([constUniversalBom + contenidoCSV], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.setAttribute("href", URL.createObjectURL(blob));
-            link.setAttribute("download", nombreArchivo);
-            link.click();
-        }
-
-        function abrirModalCrear() {
-            document.getElementById('form-id').value = '';
-            document.getElementById('form-nombre').value = '';
-            document.getElementById('form-duracion').value = '';
-            document.getElementById('form-precio').value = '';
-            document.getElementById('form-descripcion').value = '';
-            document.getElementById('modal-servicio-titulo').innerText = "➕ Crear Nuevo Tratamiento";
-            miModalServicioBootstrap.show();
-        }
-
-        function abrirModalEditarServicio(idServicio) {
-            const serv = serviciosCache.find(s => s.id === idServicio);
-            if(!serv) return;
-
-            document.getElementById('form-id').value = serv.id;
-            document.getElementById('form-nombre').value = serv.nombre;
-            document.getElementById('form-duracion').value = serv.duracion;
-            document.getElementById('form-precio').value = Math.round(serv.precio);
-            document.getElementById('form-descripcion').value = serv.descripcion || '';
-            document.getElementById('modal-servicio-titulo').innerText = `✏️ Modificar Tratamiento #${serv.id}`;
-            miModalServicioBootstrap.show();
-        }
-
-        async function procesarGuardadoServicio() {
-            const id = document.getElementById('form-id').value;
-            const nombre = document.getElementById('form-nombre').value.trim();
-            const duracion = document.getElementById('form-duracion').value;
-            const precio = document.getElementById('form-precio').value;
-            const descripcion = document.getElementById('form-descripcion').value.trim();
-            
-            if(!nombre || !duracion || !precio) { alert("Complete los datos requeridos."); return; }
-
-            let url = `${window.location.origin}/api/servicios`;
-            let metodo = 'POST';
-
-            if(id) {
-                url = `${window.location.origin}/api/servicios/${id}`;
-                metodo = 'PUT';
-            }
-
-            const res = await fetch(url, { method: metodo, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, duracion, precio, descripcion }) });
-            if(res.ok) { miModalServicioBootstrap.hide(); await cargarTodoElEcosistemaReal(); }
-        }
-
-        async function guardarProfesionalReal() {
-            const nombre = document.getElementById('pro-nombre').value.trim();
-            const email = document.getElementById('pro-email').value.trim();
-            const password = document.getElementById('pro-password').value.trim();
-            if(!nombre || !email || !password) { alert("Complete los campos."); return; }
-
-            const res = await fetch(`${window.location.origin}/api/usuarios`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, email, password, rol: 'pro' }) });
-            if(res.ok) { bootstrap.Modal.getInstance(document.getElementById('modalAltaProfesional')).hide(); await cargarTodoElEcosistemaReal(); }
-        }
-
-        async function eliminarServicio(id) { if(confirm("¿Borrar servicio definitivamente?")) { await fetch(`${window.location.origin}/api/servicios/${id}`, { method: 'DELETE' }); await cargarTodoElEcosistemaReal(); } }
+        async function eliminarServicio(id) { if(confirm("¿Borrar servicio?")) { await fetch(`${window.location.origin}/api/servicios/${id}`, { method: 'DELETE' }); await cargarTodoElEcosistemaReal(); } }
         async function cancelarTurnoAdmin(id) { if(confirm("¿Quitar esta cita?")) { await fetch(`${window.location.origin}/api/turnos/${id}`, { method: 'DELETE' }); await cargarTodoElEcosistemaReal(); } }
         async function eliminarUsuarioReal(id) { if(confirm("¿Dar de baja esta cuenta?")) { await fetch(`${window.location.origin}/api/usuarios/${id}`, { method: 'DELETE' }); await cargarTodoElEcosistemaReal(); } }
         function cerrarSesionAdmin() { localStorage.removeItem('emailUsuarioLogueado'); window.location.href = 'login.html'; }

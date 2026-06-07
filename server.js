@@ -12,7 +12,7 @@ const sql = neon('postgresql://neondb_owner:npg_MCYqz6jmh5Ab@ep-red-term-actorn0
 // Servir archivos estáticos del Frontend
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ⚙️ INICIALIZACIÓN MÁGICA: Corrige las tablas reales en Neon Cloud con contraseñas
+// ⚙️ INICIALIZACIÓN MÁGICA: Sincroniza la estructura relacional con tabla intermedia
 async function inicializarEstructuraBaseDatos() {
     try {
         // 1. Tabla de Servicios
@@ -37,7 +37,16 @@ async function inicializarEstructuraBaseDatos() {
             );
         `;
 
-        // 3. Tabla de Turnos
+        // 3. 🔗 NUEVA TABLA INTERMEDIA: Relación Muchos a Muchos (Especialidades reales)
+        await sql`
+            CREATE TABLE IF NOT EXISTS profesionales_servicios (
+                profesional_id INT NOT NULL,
+                servicio_id INT NOT NULL,
+                PRIMARY KEY (profesional_id, servicio_id)
+            );
+        `;
+
+        // 4. Tabla de Turnos
         await sql`
             CREATE TABLE IF NOT EXISTS turnos (
                 id SERIAL PRIMARY KEY,
@@ -48,7 +57,7 @@ async function inicializarEstructuraBaseDatos() {
             );
         `;
         
-        console.log("🚀 [NEON SQL] ¡Estructura de tablas sincronizada y validada con éxito con soporte de Claves!");
+        console.log("🚀 [NEON SQL] ¡Ecosistema relacional Muchos a Muchos validado en la nube!");
     } catch (e) {
         console.error("❌ Error crítico estructurando Neon Postgres:", e);
     }
@@ -59,7 +68,7 @@ inicializarEstructuraBaseDatos();
 // 🚀 ENDPOINTS DE LA API SINCRO REAL
 // =========================================================================
 
-// USUARIOS
+// USUARIOS & ASIGNACIONES
 app.get('/api/usuarios', async (req, res) => {
     try {
         const filas = await sql`SELECT * FROM usuarios ORDER BY id ASC`;
@@ -68,24 +77,58 @@ app.get('/api/usuarios', async (req, res) => {
 });
 
 app.post('/api/usuarios', async (req, res) => {
-    const { nombre, email, password, rol } = req.body;
+    const { nombre, email, password, rol, serviciosAsignados } = req.body;
     try {
         const rSeguro = rol || 'cliente';
         const pSegura = password || '23456';
         
-        await sql`
+        // 1. Insertamos o actualizamos el usuario
+        const resultado = await sql`
             INSERT INTO usuarios (nombre, email, password, rol) 
             VALUES (${nombre}, ${email}, ${pSegura}, ${rSeguro})
             ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, rol = EXCLUDED.rol
+            RETURNING id
         `;
-        res.status(201).json({ mensaje: "Usuario sincronizado correctamente con clave." });
+        
+        const proId = resultado[0].id;
+
+        // 2. Si es profesional y mandó tratamientos asociados, guardamos las relaciones
+        if (rSeguro === 'pro' && serviciosAsignados && serviciosAsignados.length > 0) {
+            // Limpiamos asignaciones viejas por si es una edición
+            await sql`DELETE FROM profesionales_servicios WHERE profesional_id = ${proId}`;
+            
+            // Inyectamos cada mapeo relacional en Postgres
+            for (let servId of serviciosAsignados) {
+                await sql`
+                    INSERT INTO profesionales_servicios (profesional_id, servicio_id) 
+                    VALUES (${proId}, ${parseInt(servId)})
+                    ON CONFLICT DO NOTHING
+                `;
+            }
+        }
+        res.status(201).json({ mensaje: "Usuario y especialidades sincronizados correctamente." });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete('/api/usuarios/:id', async (req, res) => {
     try {
-        await sql`DELETE FROM usuarios WHERE id = ${parseInt(req.params.id)}`;
+        const idInt = parseInt(req.params.id);
+        await sql`DELETE FROM profesionales_servicios WHERE profesional_id = ${idInt}`;
+        await sql`DELETE FROM usuarios WHERE id = ${idInt}`;
         res.status(200).json({ mensaje: "Removido." });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ENDPOINT CLAVE: Obtiene los profesionales asignados a un servicio específico
+app.get('/api/servicios/:id/profesionales', async (req, res) => {
+    try {
+        const pros = await sql`
+            SELECT u.id, u.nombre, u.email 
+            FROM profesionales_servicios ps
+            JOIN usuarios u ON ps.profesional_id = u.id
+            WHERE ps.servicio_id = ${parseInt(req.params.id)}
+        `;
+        res.status(200).json(pros);
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -106,10 +149,7 @@ app.post('/api/servicios', async (req, res) => {
             VALUES (${nombre}, ${parseInt(duracion)}, ${parseFloat(precio)}, ${dSegura})
         `;
         res.status(201).json({ mensaje: "Servicio guardado." });
-    } catch (e) { 
-        console.error(e);
-        res.status(500).json({ error: "Error en el motor relacional." }); 
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.put('/api/servicios/:id', async (req, res) => {
@@ -126,32 +166,20 @@ app.put('/api/servicios/:id', async (req, res) => {
 
 app.delete('/api/servicios/:id', async (req, res) => {
     try {
-        await sql`DELETE FROM servicios WHERE id = ${parseInt(req.params.id)}`;
+        const idInt = parseInt(req.params.id);
+        await sql`DELETE FROM profesionales_servicios WHERE servicio_id = ${idInt}`;
+        await sql`DELETE FROM servicios WHERE id = ${idInt}`;
         res.status(200).json({ mensaje: "Eliminado." });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // TURNOS
-app.get('/api/turnos/maestro', async (req, res) => {
-    try {
-        const filas = await sql`SELECT * FROM turnos ORDER BY fecha_hora ASC`;
-        res.status(200).json(filas);
-    } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// 🔥 NUEVO ENDPOINT DE AUDITORÍA AVANZADA PARA EL ADMIN (Cruza nombres directo en base de datos)
 app.get('/api/turnos/detallado', async (req, res) => {
     try {
         const filas = await sql`
             SELECT 
-                t.id, 
-                t.fecha_hora,
-                t.cliente_id,
-                t.profesional_id,
-                t.servicio_id,
-                u1.nombre as cliente_nombre,
-                u2.nombre as profesional_nombre,
-                s.nombre as servicio_nombre
+                t.id, t.fecha_hora, t.cliente_id, t.profesional_id, t.servicio_id,
+                u1.nombre as cliente_nombre, u2.nombre as profesional_nombre, s.nombre as servicio_nombre
             FROM turnos t
             LEFT JOIN usuarios u1 ON t.cliente_id = u1.id
             LEFT JOIN usuarios u2 ON t.profesional_id = u2.id
@@ -170,10 +198,7 @@ app.post('/api/turnos/reserva', async (req, res) => {
             VALUES (${parseInt(cliente_id)}, ${parseInt(profesional_id)}, ${parseInt(servicio_id)}, ${fecha_hora})
         `;
         res.status(201).json({ mensaje: "Tu reserva quedó agendada con éxito." });
-    } catch (e) { 
-        console.error(e);
-        res.status(500).json({ error: "Error al procesar reserva." }); 
-    }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete('/api/turnos/:id', async (req, res) => {
@@ -183,7 +208,13 @@ app.delete('/api/turnos/:id', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 Servidor unificado activo en puerto ${PORT}`);
+app.put('/api/turnos/:id/reprogramar', async (req, res) => {
+    const { fecha_hora, profesional_id } = req.body;
+    try {
+        await sql`UPDATE turnos SET fecha_hora = ${fecha_hora} WHERE id = ${parseInt(req.params.id)}`;
+        res.status(200).json({ mensaje: "Estado/Reprogramación Procesada." });
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
+
+const PORT = 3000;
+app.listen(PORT, () => { console.log(`🚀 Servidor Muchos a Muchos activo en puerto ${PORT}`); });
