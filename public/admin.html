@@ -95,8 +95,7 @@
                                 <h6 class="fw-bold mb-0" style="color: var(--rosa-f)">Mayo 2026</h6>
                                 <span class="badge bg-secondary rounded-pill p-1 small" style="font-size:0.7rem">Mayo es el mes activo</span>
                             </div>
-                            <div class="calendar-grid" id="grilla-calendario-visual">
-                                </div>
+                            <div class="calendar-grid" id="grilla-calendario-visual"></div>
                         </div>
                     </div>
                     
@@ -247,7 +246,7 @@
     <script>
         let serviciosCache = [];
         let turnosCache = [];
-        let diaSeleccionadoActual = "2026-05-19"; // Fecha de control por defecto (Mayo 2026 académico)
+        let diaSeleccionadoActual = "2026-05-19"; 
         
         let staffFijo = [
             { id: 1, nombre: "Dra. Ana Valenzuela", rol: "Cosmiatría Médica" },
@@ -293,25 +292,22 @@
                 const resUsuarios = await fetch(`${window.location.origin}/api/usuarios`);
                 const usuariosTotales = await resUsuarios.json();
 
-                // Calcular la caja total global de la clínica en Neon
                 let acumuladoCaja = 0;
                 turnosCache.forEach(t => {
-                    const serv = serviciosCache.find(s => s.id === t.servicio_id);
+                    const serv = serviciosCache.find(s => Number(s.id) === Number(t.servicio_id));
                     if (serv) acumuladoCaja += parseFloat(serv.precio);
                 });
                 document.getElementById('txt-total-caja').innerText = `$${acumuladoCaja}`;
 
-                // 🗓️ RENDERIZAR LA GRILLA DEL CALENDARIO VISUAL (Mayo 2026 de ejemplo académico)
                 renderizarCalendarioVisualMayo2026();
-
-                // Filtrar y renderizar la tabla del día activo
                 filtrarYMostrarCitasPorDia(diaSeleccionadoActual);
 
                 // Render Staff
                 const tablaStaff = document.getElementById('tabla-staff-dinamico');
                 tablaStaff.innerHTML = '';
                 staffFijo.forEach(p => {
-                    const citasPro = turnosCache.filter(t => t.profesional_id === p.id).map(c => `<div class="sub-cita">⏱️ ${c.fecha_hora.split(' ')[1] || c.fecha_hora}</div>`).join('') || 'Sin citas';
+                    const pId = Number(p.id);
+                    const citasPro = turnosCache.filter(t => Number(t.profesional_id) === pId).map(c => `<div class="sub-cita">⏱️ ${c.fecha_hora.split(' ')[1] || c.fecha_hora}</div>`).join('') || 'Sin citas';
                     tablaStaff.innerHTML += `
                         <tr id="staff-${p.id}">
                             <td class="fw-bold text-dark">${p.nombre} (ID: ${p.id})</td><td>${p.rol}</td>
@@ -332,7 +328,8 @@
                     tablaClientes.innerHTML = `<tr><td colspan="4" class="text-center text-muted small py-3">No hay clientes registrados en Neon Cloud.</td></tr>`;
                 } else {
                     clientesBD.forEach(clie => {
-                        const turnosCliente = turnosCache.filter(t => t.cliente_id === clie.id).map(c => `<div class="sub-cita">🌸 ${c.fecha_hora}</div>`).join('') || 'Sin historial';
+                        const clieId = Number(clie.id);
+                        const turnosCliente = turnosCache.filter(t => Number(t.cliente_id) === clieId).map(c => `<div class="sub-cita">🌸 ${c.fecha_hora}</div>`).join('') || 'Sin historial';
                         tablaClientes.innerHTML += `
                             <tr id="clie-${clie.id}">
                                 <td class="fw-bold">${clie.nombre} (ID: ${clie.id})</td><td><code>${clie.email}</code></td>
@@ -348,29 +345,24 @@
             } catch (err) { console.error(err); }
         }
 
-        // 🛠️ FUNCIÓN QUE GENERA EL CALENDARIO MENSUAL EN CUADRÍCULA
         function renderizarCalendarioVisualMayo2026() {
             const contenedor = document.getElementById('grilla-calendario-visual');
             contenedor.innerHTML = "";
             
-            // Cabeceras de días de la semana
             const diasSemana = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'];
             diasSemana.forEach(d => {
                 contenedor.innerHTML += `<div class="calendar-day-header">${d}</div>`;
             });
 
-            // Mayo 2026 arranca un día Viernes (5 celdas vacías al inicio)
             for(let i=0; i<5; i++) {
                 contenedor.innerHTML += `<div class="calendar-cell empty-cell"></div>`;
             }
 
-            // Inyectar los 31 días de Mayo
             for(let dia=1; dia<=31; dia++) {
                 const diaString = dia < 10 ? `0${dia}` : `${dia}`;
                 const fechaIteracion = `2026-05-${diaString}`;
 
-                // Verificar si este día en particular tiene al menos un turno en Neon
-                const tieneCitas = turnosCache.some(t => t.fecha_hora.startsWith(fechaIteracion));
+                const tieneCitas = turnosCache.some(t => String(t.fecha_hora).trim().startsWith(fechaIteracion));
                 const esElSeleccionado = (fechaIteracion === diaSeleccionadoActual);
 
                 let clasesCell = "calendar-cell";
@@ -391,13 +383,12 @@
             filtrarYMostrarCitasPorDia(nuevaFecha);
         }
 
-        // 🛠️ FUNCIÓN QUE FILTRA Y PINTA LA TABLA DE TURNOS DEL DÍA SELECCIONADO
         function filtrarYMostrarCitasPorDia(fechaFiltro) {
             document.getElementById('titulo-filtro-agenda').innerText = `Citas del día: ${fechaFiltro}`;
             const tbody = document.getElementById('tabla-maestra-turnos');
             tbody.innerHTML = "";
 
-            const turnosDelDia = turnosCache.filter(t => t.fecha_hora.startsWith(fechaFiltro));
+            const turnosDelDia = turnosCache.filter(t => String(t.fecha_hora).trim().startsWith(fechaFiltro));
 
             if(turnosDelDia.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted small py-4">No hay reservas registradas en Neon para este día.</td></tr>`;
@@ -405,9 +396,9 @@
             }
 
             turnosDelDia.forEach(t => {
-                const profEncontrado = staffFijo.find(p => p.id === t.profesional_id);
+                const profEncontrado = staffFijo.find(p => Number(p.id) === Number(t.profesional_id));
                 const nombreEspecialista = profEncontrado ? profEncontrado.nombre : `ID: ${t.profesional_id}`;
-                const serv = serviciosCache.find(s => s.id === t.servicio_id);
+                const serv = serviciosCache.find(s => Number(s.id) === Number(t.servicio_id));
                 const horaTurno = t.fecha_hora.split(' ')[1] || '09:00';
 
                 tbody.innerHTML += `
@@ -425,53 +416,41 @@
             });
         }
 
-        // 📥 📊 MOTOR DE EXPORTACIÓN CORREGIDO (RESISTENTE A FORMATOS DE FECHA E IDs)
         function exportarAgendaFormatoExcel(tipoFiltro) {
             let turnosAExportar = [];
             let nombreArchivo = "";
-
-            // Limpiamos la fecha seleccionada en el calendario visual
             const fechaFiltroLimpia = String(diaSeleccionadoActual).trim();
 
             if (tipoFiltro === 'dia') {
-                // Filtrado tolerante para el día seleccionado
                 turnosAExportar = turnosCache.filter(t => {
                     if (!t.fecha_hora) return false;
                     const fechaTurno = String(t.fecha_hora).trim();
-                    // Retorna verdadero si empieza con la fecha o si la fecha está incluida
                     return fechaTurno.startsWith(fechaFiltroLimpia) || fechaTurno.includes(fechaFiltroLimpia);
                 });
                 nombreArchivo = `estetica_zen_turnos_dia_${fechaFiltroLimpia}.csv`;
             } else {
-                // 🚀 ¡FUERZA BRUTA! Si elige todo/mes, se lleva el 100% de lo que Neon devuelva
                 turnosAExportar = [...turnosCache]; 
                 nombreArchivo = `estetica_zen_reporte_completo_neon.csv`;
             }
 
-            // Si la lista sigue en 0, es porque turnosCache realmente está vacío (Neon no devolvió nada)
             if (turnosAExportar.length === 0) {
-                alert(`Atención: No hay filas de turnos cargadas en la memoria para el criterio: "${tipoFiltro}". Registra un turno desde la web de reservas primero.`);
+                alert(`Atención: No hay filas de turnos cargadas en la memoria para el criterio: "${tipoFiltro}".`);
                 return;
             }
 
-            // Encabezados de columnas compatibles con Excel Latino (separados por punto y coma ';')
             let filasCSV = [["ID Cita", "Fecha y Hora Real", "ID Paciente", "Especialista Asignado", "Tratamiento", "Precio Estimado"]];
 
-            // Mapear los datos unificando cachés de servicios y el staff predeterminado
             turnosAExportar.forEach(t => {
-                // Convertimos a Number de forma segura por si vienen como String desde Postgres
-                const pId = t.profesional_id ? Number(t.profesional_id) : 0;
-                const sId = t.servicio_id ? Number(t.servicio_id) : 0;
+                const pId = Number(t.profesional_id);
+                const sId = Number(t.servicio_id);
 
                 const prof = staffFijo.find(p => Number(p.id) === pId);
                 const serv = serviciosCache.find(s => Number(s.id) === sId);
                 
-                // Limpieza de caracteres de control para no romper el layout del CSV
                 const idCita = `#${t.id || 'N/A'}`;
                 const fechaHora = String(t.fecha_hora || 'Sin Fecha').replace(/;/g, ' ');
-                const idCliente = `Cliente ID: ${t.cliente_id || 'Anónimo'}`;
+                const idCliente = `Cliente ID: ${t.cliente_id || 'Anonimo'}`;
                 
-                // Resolución del Especialista Asignado
                 let nombreEspecialista = `ID Profesional: ${pId}`;
                 if (prof) {
                     nombreEspecialista = prof.nombre;
@@ -481,15 +460,12 @@
                     nombreEspecialista = "Estet. Lucía Gómez";
                 }
 
-                // Resolución del Tratamiento y Precio
                 const nombreTratamiento = serv ? serv.nombre.replace(/;/g, ',') : `Tratamiento (ID: ${sId})`;
-                const precioTratamiento = serv ? `$${serv.precio}` : "$3500"; // Precio estimado de respaldo
+                const precioTratamiento = serv ? `$${serv.precio}` : "$3500";
 
-                // Insertamos la fila estructurada
                 filasCSV.push([idCita, fechaHora, idCliente, nombreEspecialista, nombreTratamiento, precioTratamiento]);
             });
 
-            // Generar la codificación binaria con la firma UTF-8 (\uFEFF) para que Excel reconozca eñes y acentos
             let contenidoCSV = "data:text/csv;charset=utf-8,\uFEFF" + filasCSV.map(e => e.join(";")).join("\n");
             let encodedUri = encodeURI(contenidoCSV);
             
@@ -498,7 +474,7 @@
             linkDescarga.setAttribute("download", nombreArchivo);
             document.body.appendChild(linkDescarga);
             
-            linkDescarga.click(); // Gatillar la descarga automática
+            linkDescarga.click(); 
             document.body.removeChild(linkDescarga);
         }
 
@@ -630,6 +606,7 @@
             alert(`⛔ Usuario ${nombre} Suspendido.`);
         }
 
+        // Corrección estricta para asegurar limpieza al salir
         function cerrarSesionAdmin() {
             localStorage.removeItem('emailUsuarioLogueado');
             window.location.href = 'login.html';
