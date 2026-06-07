@@ -39,7 +39,7 @@
         <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
             <li class="nav-item"><button class="nav-link active" id="servicios-tab" data-bs-toggle="tab" data-bs-target="#panel-servicios" type="button">🛠️ ABM Servicios</button></li>
             <li class="nav-item"><button class="nav-link" id="calendario-tab" data-bs-toggle="tab" data-bs-target="#panel-calendario" type="button">📅 Calendario Maestro</button></li>
-            <li class="nav-item"><button class="nav-link" id="usuarios-tab" data-bs-toggle="tab" data-bs-target="#panel-usuarios" type="button">👥 Fichero General de Cuentas</button></li>
+            <li class="nav-item"><button class="nav-link" id="usuarios-tab" data-bs-toggle="tab" data-bs-target="#panel-usuarios" type="button">👥 Ficheros de Cuentas</button></li>
         </ul>
 
         <div class="tab-content" id="adminTabsContent">
@@ -51,7 +51,7 @@
                 </div>
                 <div class="card card-custom shadow-sm p-3">
                     <table class="table table-hover mb-0">
-                        <thead class="table-light"><tr><th>ID</th><th>Servicio</th><th>Duración</th><th>Precio</th><th class="text-center">Acciones</th></tr></thead>
+                        <thead class="table-light"><tr><th>ID</th><th>Servicio y Descripción</th><th>Duración</th><th>Precio</th><th class="text-center">Acciones</th></tr></thead>
                         <tbody id="tabla-servicios"></tbody>
                     </table>
                 </div>
@@ -81,39 +81,55 @@
                 </div>
             </div>
 
-            <!-- FICHERO GENERAL DE USUARIOS (CON ALTA DE PROFESIONALES) -->
+            <!-- TAB FICHEROS SEPARADOS (PROFESIONALES Y CLIENTES) -->
             <div class="tab-pane fade" id="panel-usuarios" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold mb-0">Cuentas Registradas en la Nube</h5>
+                
+                <!-- 👑 PLANILLA 1: PROFESIONALES -->
+                <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
+                    <h5 class="fw-bold mb-0" style="color: var(--rosa-f);">📋 Fichero de Personal Técnico (Pros)</h5>
                     <button class="btn btn-nuevo shadow-sm btn-sm" data-bs-toggle="modal" data-bs-target="#modalAltaProfesional" style="background-color: #4f4f4f;">+ Registrar Profesional Técnico</button>
                 </div>
-                <div class="card card-custom shadow-sm p-3">
+                <div class="card card-custom shadow-sm p-3 mb-5">
                     <table class="table table-hover mb-0">
-                        <thead class="table-light"><tr><th>ID</th><th>Nombre / Especialista</th><th>Email (Login)</th><th>Rol del Sistema</th><th>Acciones Realistas</th></tr></thead>
-                        <tbody id="tabla-usuarios-global"></tbody>
+                        <thead class="table-light"><tr><th>ID Técnico</th><th>Nombre / Especialidad</th><th>Email (Login)</th><th>Clave Real</th><th>Acciones</th></tr></thead>
+                        <tbody id="tabla-profesionales-real"></tbody>
                     </table>
                 </div>
+
+                <!-- 👤 PLANILLA 2: CLIENTES -->
+                <h5 class="fw-bold mb-3">👤 Fichero de Registro de Clientes</h5>
+                <div class="card card-custom shadow-sm p-3">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light"><tr><th>ID Cliente</th><th>Nombre Completo</th><th>Email (Login)</th><th>Clave Real</th><th>Acciones</th></tr></thead>
+                        <tbody id="tabla-clientes-real"></tbody>
+                    </table>
+                </div>
+
             </div>
         </div>
     </div>
 
-    <!-- MODAL ABM SERVICIOS -->
+    <!-- MODAL ABM SERVICIOS CON CONEXIÓN DE DESCRIPCIÓN -->
     <div class="modal fade" id="modalServicio" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header"><h5 class="modal-title fw-bold" id="modalTitulo">🛠️ Tratamiento</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body p-4">
                     <input type="hidden" id="servicio-id-edicion">
-                    <div class="mb-3"><label class="form-label small">Nombre del Servicio</label><input type="text" id="form-nombre" class="form-control rounded-pill"></div>
-                    <div class="mb-3"><label class="form-label small">Duración (min)</label><input type="number" id="form-duracion" class="form-control rounded-pill"></div>
-                    <div class="mb-3"><label class="form-label small">Precio ($)</label><input type="number" id="form-precio" class="form-control rounded-pill"></div>
+                    <div class="mb-3"><label class="form-label small fw-bold">Nombre del Servicio</label><input type="text" id="form-nombre" class="form-control rounded-pill"></div>
+                    <div class="mb-3"><label class="form-label small fw-bold">Duración (min)</label><input type="number" id="form-duracion" class="form-control rounded-pill"></div>
+                    <div class="mb-3"><label class="form-label small fw-bold">Precio ($)</label><input type="number" id="form-precio" class="form-control rounded-pill"></div>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Descripción del Tratamiento</label>
+                        <textarea id="form-descripcion" class="form-control" rows="3" style="border-radius: 15px;" placeholder="Detalles del tratamiento..."></textarea>
+                    </div>
                     <button class="btn btn-rosa w-100 py-2 rounded-pill text-white" style="background-color: var(--rosa-f);" onclick="procesarGuardadoServicio()">Guardar en Postgres</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 🚀 MODAL ALTA DE PROFESIONAL (EXCLUSIVO DEL ADMIN) -->
+    <!-- MODAL ALTA DE PROFESIONAL -->
     <div class="modal fade" id="modalAltaProfesional" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -128,7 +144,7 @@
                         <input type="email" id="pro-email" class="form-control rounded-pill" placeholder="ejemplo@zen.com">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">Asignar Contraseña Inicial</label>
+                        <label class="form-label small fw-bold">Asignar Contraseña Real de Acceso</label>
                         <input type="text" id="pro-password" class="form-control rounded-pill" value="123456" placeholder="Contraseña de acceso">
                     </div>
                     <p class="text-muted small">Nota: Al guardar, esta cuenta se inyectará directamente en Neon con el rol institucional de <b>'pro'</b>.</p>
@@ -156,47 +172,58 @@
                 const resUser = await fetch(`${window.location.origin}/api/usuarios`);
                 usuariosCache = await resUser.json();
 
-                // Render Servicios
+                // Render Servicios con Descripción
                 const tServicios = document.getElementById('tabla-servicios'); tServicios.innerHTML = '';
                 serviciosCache.forEach(s => {
-                    tServicios.innerHTML += `<tr><td>#${s.id}</td><td><b>${s.nombre}</b></td><td>${s.duracion} min</td><td class="text-success">$${s.precio}</td><td><button class="btn btn-sm btn-outline-danger rounded-pill" onclick="eliminarServicio(${s.id})">Borrar</button></td></tr>`;
+                    tServicios.innerHTML += `<tr><td>#${s.id}</td><td><b>${s.nombre}</b><br><small class="text-muted">${s.descripcion || ''}</small></td><td>${s.duracion} min</td><td class="text-success">$${s.precio}</td><td><button class="btn btn-sm btn-outline-danger rounded-pill" onclick="eliminarServicio(${s.id})">Borrar</button></td></tr>`;
                 });
 
                 renderizarCalendarioVisualMayo2026();
                 filtrarYMostrarCitasPorDia(diaSeleccionadoActual);
 
-                // Render Fichero Unificado (Clientes y Profesionales reales)
-                const tUsuarios = document.getElementById('tabla-usuarios-global'); tUsuarios.innerHTML = '';
-                usuariosCache.forEach(u => {
-                    tUsuarios.innerHTML += `<tr><td><code>ID: ${u.id}</code></td><td><b>${u.nombre}</b></td><td><code>${u.email}</code></td><td><span class="badge ${u.rol === 'pro' ? 'bg-primary':'bg-secondary'}">${u.rol.toUpperCase()}</span></td><td><button class="btn btn-sm btn-danger rounded-pill" onclick="eliminarUsuarioReal(${u.id})">Eliminar Cuenta</button></td></tr>`;
-                });
+                // 🚀 SEPARACIÓN DE ENTRADAS REALES DE NEON CLOUD EN SUS RESPECTIVAS TABLAS
+                const tProfesionales = document.getElementById('tabla-profesionales-real'); tProfesionales.innerHTML = '';
+                const tClientes = document.getElementById('tabla-clientes-real'); tClientes.innerHTML = '';
+
+                // Filtrar profesionales (rol === 'pro')
+                const listaPros = usuariosCache.filter(u => u.rol === 'pro');
+                if(listaPros.length === 0) {
+                    tProfesionales.innerHTML = `<tr><td colspan="5" class="text-center text-muted small py-2">No hay especialistas registrados en Postgres.</td></tr>`;
+                } else {
+                    listaPros.forEach(p => {
+                        tProfesionales.innerHTML += `<tr><td><code>#${p.id}</code></td><td><b>${p.nombre}</b></td><td><code>${p.email}</code></td><td><span class="badge bg-light text-dark font-monospace">${p.password || '123456'}</span></td><td><button class="btn btn-sm btn-danger rounded-pill" onclick="eliminarUsuarioReal(${p.id})">Dar de Baja</button></td></tr>`;
+                    });
+                }
+
+                // Filtrar clientes (rol === 'cliente')
+                const listaClientes = usuariosCache.filter(u => u.rol === 'cliente');
+                if(listaClientes.length === 0) {
+                    tClientes.innerHTML = `<tr><td colspan="5" class="text-center text-muted small py-2">No hay clientes registrados en la plataforma.</td></tr>`;
+                } else {
+                    listaClientes.forEach(c => {
+                        tClientes.innerHTML += `<tr><td><code>#${c.id}</code></td><td><b>${c.nombre}</b></td><td><code>${c.email}</code></td><td><span class="badge bg-light text-dark font-monospace">${c.password || 'Sin Clave'}</span></td><td><button class="btn btn-sm btn-danger rounded-pill" onclick="eliminarUsuarioReal(${c.id})">Eliminar Ficha</button></td></tr>`;
+                    });
+                }
 
             } catch (err) { console.error(err); }
         }
 
-        // 🚀 ACCIÓN: CREAR PROFESIONAL DESDE EL PANEL DEL ADMIN
         async function guardarProfesionalReal() {
             const nombre = document.getElementById('pro-nombre').value.trim();
             const email = document.getElementById('pro-email').value.trim();
-            if(!nombre || !email) { alert("Por favor complete el nombre y el correo."); return; }
+            const password = document.getElementById('pro-password').value.trim();
+            if(!nombre || !email || !password) { alert("Por favor complete todos los campos."); return; }
 
-            const payload = { nombre: nombre, email: email, rol: 'pro' };
-
-            const res = await fetch(`${window.location.origin}/api/usuarios`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+            const payload = { nombre: nombre, email: email, password: password, rol: 'pro' };
+            const res = await fetch(`${window.location.origin}/api/usuarios`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
 
             if(res.ok) {
-                alert(`🎉 ¡Éxito! ${nombre} fue agregado a la base de datos cloud.`);
+                alert(`🎉 ¡Éxito! ${nombre} fue inyectado en el fichero de profesionales.`);
                 document.getElementById('pro-nombre').value = '';
                 document.getElementById('pro-email').value = '';
                 bootstrap.Modal.getInstance(document.getElementById('modalAltaProfesional')).hide();
                 await cargarTodoElEcosistemaReal();
-            } else {
-                alert("Error: El correo electrónico ya se encuentra registrado.");
-            }
+            } else { alert("Error: El correo electrónico ya existe."); }
         }
 
         function renderizarCalendarioVisualMayo2026() {
@@ -235,7 +262,7 @@
 
         async function exportarAgendaFormatoExcelReal() {
             if (turnosCache.length === 0) { alert("La base de datos de turnos está vacía."); return; }
-            let filasCSV = [["ID Cita", "Fecha y Hora Real", "ID Cliente", "Especialista Asignado", "Tratamiento", "Precio"]];
+            let filasCSV = [["ID Cita", "Fecha y Hora Real", "ID Cliente", "ID Especialista", "Tratamiento", "Precio"]];
             
             turnosCache.forEach(t => {
                 const s = serviciosCache.find(serv => serv.id === t.servicio_id);
@@ -249,19 +276,33 @@
         }
 
         function abrirModalCrear() {
-            document.getElementById('servicio-id-edicion').value = ""; document.getElementById('form-nombre').value = ""; document.getElementById('form-duracion').value = ""; document.getElementById('form-precio').value = "";
+            document.getElementById('servicio-id-edicion').value = ""; document.getElementById('form-nombre').value = ""; document.getElementById('form-duracion').value = ""; document.getElementById('form-precio').value = ""; document.getElementById('form-descripcion').value = "";
             new bootstrap.Modal(document.getElementById('modalServicio')).show();
         }
 
         async function procesarGuardadoServicio() {
-            const payload = { nombre: document.getElementById('form-nombre').value, duracion: parseInt(document.getElementById('form-duracion').value), precio: parseFloat(document.getElementById('form-precio').value), descripcion: 'Tratamiento Real' };
+            const nombreIn = document.getElementById('form-nombre').value.trim();
+            const duracionIn = document.getElementById('form-duracion').value;
+            const precioIn = document.getElementById('form-precio').value;
+            const descripcionIn = document.getElementById('form-descripcion').value.trim();
+
+            if(!nombreIn || !duracionIn || !precioIn || !descripcionIn) {
+                alert("Por favor, completa todos los campos del servicio.");
+                return;
+            }
+
+            const payload = { nombre: nombreIn, duracion: parseInt(duracionIn), precio: parseFloat(precioIn), descripcion: descripcionIn };
             const res = await fetch(`${window.location.origin}/api/servicios`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            if(res.ok) { bootstrap.Modal.getInstance(document.getElementById('modalServicio')).hide(); await cargarTodoElEcosistemaReal(); }
+            
+            if(res.ok) { 
+                bootstrap.Modal.getInstance(document.getElementById('modalServicio')).hide(); 
+                await cargarTodoElEcosistemaReal(); 
+            } else { alert("Error al guardar."); }
         }
 
         async function eliminarServicio(id) { if(confirm("¿Eliminar?")) { await fetch(`${window.location.origin}/api/servicios/${id}`, { method: 'DELETE' }); await cargarTodoElEcosistemaReal(); } }
         async function cancelarTurnoAdmin(id) { if(confirm("¿Quitar turno?")) { await fetch(`${window.location.origin}/api/turnos/${id}`, { method: 'DELETE' }); await cargarTodoElEcosistemaReal(); } }
-        async function eliminarUsuarioReal(id) { if(confirm("¿Eliminar cuenta de Neon?")) { await fetch(`${window.location.origin}/api/usuarios/${id}`, { method: 'DELETE' }); await cargarTodoElEcosistemaReal(); } }
+        async function eliminarUsuarioReal(id) { if(confirm("¿Eliminar esta cuenta de Neon?")) { await fetch(`${window.location.origin}/api/usuarios/${id}`, { method: 'DELETE' }); await cargarTodoElEcosistemaReal(); } }
         function cerrarSesionAdmin() { localStorage.removeItem('emailUsuarioLogueado'); window.location.href = 'login.html'; }
     </script>
 </body>

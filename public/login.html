@@ -57,15 +57,19 @@
             </div>
             <div class="mb-4 text-start">
                 <label class="form-label small fw-bold">Contraseña</label>
-                <input type="text" id="password" class="form-control rounded-pill" placeholder="••••••••" autocomplete="new-password" onfocus="this.type='password';">
+                <input type="password" id="password" class="form-control rounded-pill" placeholder="••••••••" autocomplete="current-password">
             </div>
             
             <button class="btn btn-login w-100 py-2 mb-3 shadow-sm" onclick="verificarLoginReal()">INGRESAR</button>
-            <p class="small text-muted mb-3">¿No tienes cuenta? <a href="#" data-bs-toggle="modal" data-bs-target="#modalRegistro" style="color: #f06292; font-weight: 600; text-decoration: none;">Regístrate aquí</a></p>
+            <p class="small text-muted mb-3">
+                ¿No tienes cuenta? 
+                <a href="javascript:void(0);" onclick="abrirModalRegistroManual()" style="color: #f06292; font-weight: 600; text-decoration: none;">Regístrate aquí</a>
+            </p>
             <a href="index.html" class="small text-muted text-decoration-none">← Volver a la Landing</a>
         </div>
     </div>
 
+    <!-- MODAL DE REGISTRO CON CONTRASEÑA REAL -->
     <div class="modal fade" id="modalRegistro" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content shadow-lg">
@@ -79,8 +83,13 @@
                         <input type="text" id="reg-nombre" class="form-control rounded-pill" placeholder="Ej: Ana Clara Pérez">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">Email</label>
+                        <label class="form-label small fw-bold">Email de Contacto</label>
                         <input type="email" id="reg-email" class="form-control rounded-pill" placeholder="ejemplo@correo.com">
+                    </div>
+                    <!-- 🔑 Campo de contraseña agregado al Registro -->
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Crea tu Contraseña de Acceso</label>
+                        <input type="password" id="reg-password" class="form-control rounded-pill" placeholder="Mínimo 6 caracteres">
                     </div>
                     <button class="btn btn-login w-100 py-2 rounded-pill shadow-sm" onclick="procesarRegistroReal()">CREAR CUENTA E INGRESAR</button>
                 </div>
@@ -88,14 +97,13 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
+        // Limpieza básica de inputs al cargar
         window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                const inputEmail = document.getElementById('email');
-                const inputPass = document.getElementById('password');
-                if (inputEmail) inputEmail.value = '';
-                if (inputPass) { inputPass.value = ''; inputPass.type = 'text'; }
-            }, 50);
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
         });
 
         function lanzarToast(mensaje) {
@@ -111,14 +119,27 @@
             aviso.style.zIndex = '9999';
             aviso.innerText = mensaje;
             document.body.appendChild(aviso);
+            setTimeout(() => { aviso.remove(); }, 3000);
         }
 
+        function abrirModalRegistroManual() {
+            const miModalEl = document.getElementById('modalRegistro');
+            const instanciaModal = new bootstrap.Modal(miModalEl);
+            instanciaModal.show();
+        }
+
+        // 🛡️ LOGIN: VALIDA EMAIL Y CONTRASEÑA REAL CONTRA POSTGRES
         async function verificarLoginReal() {
             const emailIn = document.getElementById('email').value.trim();
-            if(!emailIn) { alert("Ingresa un correo electrónico."); return; }
+            const passwordIn = document.getElementById('password').value.trim();
 
-            // Credencial Maestra Exclusiva del Administrador
-            if(emailIn === 'admin@zen.com') {
+            if(!emailIn || !passwordIn) { 
+                alert("Por favor, completa tu email y contraseña."); 
+                return; 
+            }
+
+            // Credencial Maestra Fija del Administrador General
+            if(emailIn === 'admin@zen.com' && passwordIn === 'admin123') {
                 localStorage.setItem('emailUsuarioLogueado', emailIn);
                 lanzarToast("🔓 Acceso Concedido como Administrador.");
                 setTimeout(() => { window.location.href = 'admin.html'; }, 1000);
@@ -128,10 +149,15 @@
             try {
                 const res = await fetch(`${window.location.origin}/api/usuarios`);
                 const usuarios = await res.json();
-                const usuarioEncontrado = usuarios.find(u => u.email.toLowerCase() === emailIn.toLowerCase());
+                
+                // Buscamos coincidencia exacta de email Y contraseña texto plano
+                const usuarioEncontrado = usuarios.find(u => 
+                    u.email.toLowerCase() === emailIn.toLowerCase() && 
+                    String(u.password).trim() === passwordIn
+                );
 
                 if(!usuarioEncontrado) {
-                    alert("❌ El correo ingresado no se encuentra registrado en Neon Cloud.");
+                    alert("❌ Credenciales incorrectas. Verifica tu email o contraseña.");
                     return;
                 }
 
@@ -144,27 +170,50 @@
                     lanzarToast(`🔓 Bienvenido, ${usuarioEncontrado.nombre}`);
                     setTimeout(() => { window.location.href = 'reserva.html'; }, 1000);
                 }
-            } catch (err) { alert("Error al conectar con Postgres."); }
+            } catch (err) { alert("Error al conectar con la base de datos cloud."); }
         }
 
+        // 🛡️ REGISTRO: INYECTA EMAIL, NOMBRE Y CONTRASEÑA A NEON
         async function procesarRegistroReal() {
             const nombre = document.getElementById('reg-nombre').value.trim();
             const email = document.getElementById('reg-email').value.trim();
-            if(!nombre || !email) { alert("Completa los campos."); return; }
+            const password = document.getElementById('reg-password').value.trim();
+
+            if(!nombre || !email || !password) { 
+                alert("Por favor complete todos los campos, incluyendo la contraseña."); 
+                return; 
+            }
+
+            if(password.length < 4) {
+                alert("La contraseña debe tener al menos 4 caracteres por seguridad.");
+                return;
+            }
 
             try {
                 const respuesta = await fetch(`${window.location.origin}/api/usuarios`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre: nombre, email: email, rol: 'cliente' })
+                    body: JSON.stringify({ 
+                        nombre: nombre, 
+                        email: email, 
+                        password: password, // 🚀 Viaja directo a la columna password de Neon
+                        rol: 'cliente' 
+                    })
                 });
 
                 if(respuesta.ok) {
                     localStorage.setItem('emailUsuarioLogueado', email);
-                    lanzarToast("🎉 Registro exitoso guardado en Neon.");
+                    
+                    const modalEl = document.getElementById('modalRegistro');
+                    const instanciaModal = bootstrap.Modal.getInstance(modalEl);
+                    if(instanciaModal) instanciaModal.hide();
+
+                    lanzarToast("🎉 Cuenta creada y protegida con éxito en Postgres.");
                     setTimeout(() => { window.location.href = 'reserva.html'; }, 1200);
-                } else { alert("Error: El correo ya existe o es inválido."); }
-            } catch (err) { alert("Error de red."); }
+                } else { 
+                    alert("Error: El correo electrónico ya se encuentra registrado."); 
+                }
+            } catch (err) { alert("Error de red con el servidor."); }
         }
     </script>
 </body>
