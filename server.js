@@ -7,12 +7,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // CONEXIÓN CLOUD DEFINITIVA (Neon Postgres Pooler)
-const sql = neon('postgresql://neondb_owner:npg_MCYqz6jmh5Ab@ep-red-term-actorn0y-pooler.sa-east-1.aws.neon.tech/neondb');
+// Nota: Para subir al Drive de la entrega, recordá ocultar la credencial con process.env.DATABASE_URL
+const sql = neon(process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_MCYqz6jmh5Ab@ep-red-term-actorn0y-pooler.sa-east-1.aws.neon.tech/neondb');
 
 // Servir archivos estáticos del Frontend
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ⚙️ INICIALIZACIÓN MÁGICA: Sincroniza la estructura relacional con tabla intermedia
+// ⚙️ INICIALIZACIÓN: Sincroniza la estructura relacional con tabla intermedia y blindaje UNIQUE
 async function inicializarEstructuraBaseDatos() {
     try {
         // 1. Tabla de Servicios
@@ -46,20 +47,27 @@ async function inicializarEstructuraBaseDatos() {
             );
         `;
 
-        // 4. Tabla de Turnos
+        // 4. Tabla de Turnos con restricción anti-colisiones atómica
         await sql`
             CREATE TABLE IF NOT EXISTS turnos (
                 id SERIAL PRIMARY KEY,
                 cliente_id INT NOT NULL,
                 profesional_id INT NOT NULL,
                 servicio_id INT NOT NULL,
-                fecha_hora VARCHAR(60) NOT NULL
+                fecha_hora VARCHAR(60) NOT NULL,
+                UNIQUE(profesional_id, fecha_hora)
             );
         `;
+
+        // Garantiza la creación del índice único si la tabla ya existía previamente en Neon
+        await sql`
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_turno_unico_pro_fecha 
+            ON turnos (profesional_id, fecha_hora);
+        `;
         
-        console.log("🚀 [NEON SQL] ¡Ecosistema relacional Muchos a Muchos validado en la nube!");
+        console.log("🚀 [NEON SQL] ¡Ecosistema relacional Muchos a Muchos e índice anti-colisiones validados en la nube!");
     } catch (e) {
-        console.error("❌ Error crítico estructurando Neon Postgres:", e);
+        console.error("❌ Error crítico estructurando Neon Postgres (revisar duplicados previos si falla el índice):", e);
     }
 }
 inicializarEstructuraBaseDatos();
@@ -94,10 +102,8 @@ app.post('/api/usuarios', async (req, res) => {
 
         // 2. Si es profesional y mandó tratamientos asociados, guardamos las relaciones Muchos a Muchos
         if (rSeguro === 'pro' && serviciosAsignados && serviciosAsignados.length > 0) {
-            // Limpiamos asignaciones viejas por si es una edición
             await sql`DELETE FROM profesionales_servicios WHERE profesional_id = ${proId}`;
             
-            // Inyectamos cada mapeo relacional en Postgres
             for (let servId of serviciosAsignados) {
                 await sql`
                     INSERT INTO profesionales_servicios (profesional_id, servicio_id) 
@@ -199,15 +205,41 @@ app.get('/api/turnos/detallado', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// MOTOR ANTI-COLISIONES (Doble barrera: chequeo síncrono + captura UNIQUE 23505)
 app.post('/api/turnos/reserva', async (req, res) => {
     const { cliente_id, profesional_id, servicio_id, fecha_hora } = req.body;
     try {
+        const proId = parseInt(profesional_id);
+        const cliId = parseInt(cliente_id);
+        const servId = parseInt(servicio_id);
+
+        // Barrera 1: Verificación síncrona previa
+        const existentes = await sql`
+            SELECT id FROM turnos 
+            WHERE profesional_id = ${proId} AND fecha_hora = ${fecha_hora}
+        `;
+        if (existentes.length > 0) {
+            return res.status(409).json({
+                error: "Conflicto: El profesional ya cuenta con un turno reservado en el horario seleccionado."
+            });
+        }
+
+        // Inserción protegida por el índice UNIQUE en PostgreSQL
         await sql`
             INSERT INTO turnos (cliente_id, profesional_id, servicio_id, fecha_hora) 
-            VALUES (${parseInt(cliente_id)}, ${parseInt(profesional_id)}, ${parseInt(servicio_id)}, ${fecha_hora})
+            VALUES (${cliId}, ${proId}, ${servId}, ${fecha_hora})
         `;
         res.status(201).json({ mensaje: "Tu reserva quedó agendada con éxito." });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+
+    } catch (e) {
+        // Barrera 2: Captura condición de carrera simultánea en Postgres (código 23505)
+        if (e.code === '23505') {
+            return res.status(409).json({
+                error: "Conflicto de concurrencia: El cupo acaba de ser tomado por otro cliente."
+            });
+        }
+        res.status(500).json({ error: e.message });
+    }
 });
 
 app.delete('/api/turnos/:id', async (req, res) => {
@@ -222,7 +254,14 @@ app.put('/api/turnos/:id/reprogramar', async (req, res) => {
     try {
         await sql`UPDATE turnos SET fecha_hora = ${fecha_hora} WHERE id = ${parseInt(req.params.id)}`;
         res.status(200).json({ mensaje: "Estado/Reprogramación Procesada." });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) {
+        if (e.code === '23505') {
+            return res.status(409).json({
+                error: "Conflicto: El nuevo horario elegido ya se encuentra ocupado para este profesional."
+            });
+        }
+        res.status(500).json({ error: e.message });
+    }
 });
 
 const PORT = 3000;
