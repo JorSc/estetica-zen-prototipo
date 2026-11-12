@@ -204,9 +204,17 @@
 
             const payload = { cliente_id: clienteIdDetectado, profesional_id: proId, servicio_id: servicioSeleccionadoId, fecha_hora: `${fecha} ${horaSeleccionada}` };
             const res = await fetch(`${window.location.origin}/api/turnos/reserva`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const data = await res.json();
 
-            if(res.ok) { alert("🎉 Cita agendada de forma exitosa en la nube."); await actualizarCacheTurnos(); }
-            else { alert("Error al procesar reserva."); }
+            if(res.status === 201) {
+                alert("🎉 " + (data.mensaje || "Cita agendada de forma exitosa en la nube."));
+                await actualizarCacheTurnos();
+            } else if(res.status === 409) {
+                alert(`⚠️ ERROR 409 (CONFLICTO):\n${data.error}`);
+                await actualizarCacheTurnos(); // Refresca la grilla y marca el botón en gris automáticamente
+            } else {
+                alert(`❌ Error ${res.status}: ${data.error || "Conflicto: El nuevo horario elegido ya se encuentra ocupado para este profesional."}`);
+            }
         }
 
         async function cargarMisTurnosModal() {
